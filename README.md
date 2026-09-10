@@ -14,6 +14,7 @@
 | `/hld` | 高阶方案设计（评审文档，不写代码） |
 | `/spike` | 只读代码分析与方案 Spike |
 | `/init-rules` | 为当前项目生成跨工具规则（`AGENTS.md` 等） |
+| `/flow` | 文档驱动闭环：Features → Plans（追加）→ 代码 → Designs/Standards（变更）→ Features |
 
 源码目录：`.agents/skills/<name>/SKILL.md`
 
@@ -96,6 +97,12 @@ npx skills update rdd -g
   hld/reference.md
   spike/SKILL.md
   init-rules/SKILL.md
+  flow/
+    SKILL.md
+    reference/init.md
+    reference/plan.md
+    reference/go.md
+    scripts/flow-check.mjs
 ```
 
 ## License
