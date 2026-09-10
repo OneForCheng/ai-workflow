@@ -57,7 +57,9 @@ disable-model-invocation: true
 
 未指定时：只生成 `AGENTS.md`，并在对话中说明可再补工具专用文件。
 
-选择「文档体系」时：建议**同时生成根 `AGENTS.md` 作为入口**（多数工具不会自动加载 `docs/`），由用户确认是否一并生成。
+选择「文档体系」时：
+1. **先反向检查已有规则文件**（见下方「`docs/standards/`（配合 `/flow` 文档体系）」小节）：存在同一主题的正文时先与用户确认归属，再决定是否写入。
+2. 建议**同时生成根 `AGENTS.md` 作为入口**（多数工具不会自动加载 `docs/`），由用户确认是否一并生成。
 
 ---
 
@@ -159,6 +161,34 @@ updated: <YYYY-MM-DD>
 ---
 ```
 
+**反向检查（必做）：避免双重事实源**
+
+写入 `docs/standards/*.md` 前，先扫描项目中已有的规则载体，判断 product/structure/tech 的内容是否已存在于别处：
+
+| 载体 | 路径 |
+|------|------|
+| Cursor 项目规则 | `.cursor/rules/**/*.mdc`（同目录下的 `.md` 会被 Cursor 忽略，但仍需检查其内容） |
+| 其他项目规则 | `.cursorrules`（legacy）、`.windsurfrules`、`.github/copilot-instructions.md` 等 |
+| 通用 Agent 指令 | 根目录与各子目录的 `AGENTS.md`、`CLAUDE.md` |
+| 其他工具目录 | `.opencode/`、`.claude/`、`.codex/` 等已有约定 |
+
+判定与处理：
+
+- **内容重叠**（同一主题的正文已存在于规则文件）→ 停下来，输出对照表，由用户决定正文归属：
+
+  | 主题 | 现有载体 | 计划写入 |
+  |------|----------|----------|
+
+  1. **`docs/standards/` 为唯一正文**：原规则文件只保留触发条件 + 一行指针（Cursor `.mdc` 可用 `@docs/standards/<x>.md`，规则命中时才内联；`AGENTS.md` 写普通链接即可，链接不会自动加载）
+  2. **原规则文件为唯一正文**：本次跳过对应分册，仅在入口/索引中留指针
+
+- **不重叠**（现有规则文件管的是别的内容）→ 正常新增，不动它
+- **不确定** → 问用户，不擅自改删
+
+为什么必须检查：Cursor 按**完整文件路径**识别规则，不做按名去重——同名不同目录的两条规则只要条件命中就都生效；且官方**未定义 `AGENTS.md` 与 `.cursor/rules` 的优先级**，两处内容重叠时模型会同时收到两份指令，既浪费 token 又可能互相矛盾（见 [Cursor 规则文档](https://cursor.com/docs/rules.md)）。
+
+**硬约束**：同一主题的正文只允许存在一处；本 skill 不删除、不改写用户已有的规则文件，任何合并或迁移都须逐项确认。
+
 约束：
 
 - **索引**：在 `docs/standards/README.md` 追加或更新这三行，不改动其他条目；索引不存在时提示「先执行 `/flow init`」，获用户同意后才连同索引一并建立
@@ -183,9 +213,10 @@ updated: <YYYY-MM-DD>
 1. **确认目标工具**（步骤 0）。
 2. **扫描项目**：构建配置、入口、`src/` 主目录、测试目录、CI 配置。
 3. **输出分析摘要**（5 行内）：技术栈、架构、主要模块，并说明**各分册将纳入哪些章节、省略哪些**及原因。
-4. **写入文件**：
+4. **反向检查已有规则文件**（选择 `docs/standards/` 时必做）：扫描 `.cursor/rules/**`、`.cursorrules`、`AGENTS.md`、`CLAUDE.md`、其他工具目录，列出与 product/structure/tech 重叠的主题并确认正文归属；无重叠则显式声明「已检查，无双重事实源」后继续。
+5. **写入文件**：
    - 始终（或默认）：`AGENTS.md`
    - 按选择：`docs/standards/{product,structure,tech}.md` + 索引 / Cursor `.mdc` / `CLAUDE.md` / 其他约定入口
-5. **自检**：路径/命令可验证、三分内容无重复、Cursor globs 匹配实际路径；选择 `docs/standards/` 时额外检查 front-matter 必填字段与索引条目一一对应。
+6. **自检**：路径/命令可验证、三分内容无重复、Cursor globs 匹配实际路径；选择 `docs/standards/` 时额外检查 front-matter 必填字段与索引条目一一对应，且同一主题正文未在规则文件与 `docs/standards/` 中并存。
 
 **只新增/更新**规则文件与 `AGENTS.md`（及用户确认的 `docs/standards/`、工具入口），不修改业务源代码。
