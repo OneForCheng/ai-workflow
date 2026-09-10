@@ -1,9 +1,9 @@
 ---
 name: init-rules
 description: >-
-  Generate cross-tool project context rules (AGENTS.md plus optional Cursor /
-  Claude / Codex / OpenCode rule files) from the current repo. Use when the user
-  invokes /init-rules or asks to bootstrap project AI rules.
+  Generate cross-tool project context rules (AGENTS.md, docs/standards/*.md, or
+  optional Cursor / Claude / Codex / OpenCode rule files) from the current repo.
+  Use when the user invokes /init-rules or asks to bootstrap project AI rules.
 disable-model-invocation: true
 ---
 
@@ -49,12 +49,15 @@ disable-model-invocation: true
 | 选项 | 输出位置 |
 |------|----------|
 | **通用（推荐，默认）** | 仓库根目录 `AGENTS.md` |
+| **文档体系（配合 `/flow`）** | `docs/standards/{product,structure,tech}.md`（并登记 `docs/standards/README.md` 索引） |
 | **Cursor** | `.cursor/rules/{product,structure,tech}.mdc` |
 | **Claude Code** | 根目录 `CLAUDE.md`（摘要 + 指向 AGENTS.md / 三分要点），可选 `.claude/` 补充 |
 | **Codex / 通用 Agents** | 依赖 `AGENTS.md`；若项目已有 `.agents/` 约定则按现有结构补充 |
 | **OpenCode** | `AGENTS.md`；若存在 `.opencode/` 项目约定则按约定补充简短入口 |
 
 未指定时：只生成 `AGENTS.md`，并在对话中说明可再补工具专用文件。
+
+选择「文档体系」时：建议**同时生成根 `AGENTS.md` 作为入口**（多数工具不会自动加载 `docs/`），由用户确认是否一并生成。
 
 ---
 
@@ -130,9 +133,38 @@ alwaysApply: false
 - 核心目录（5–8 行）
 - 常用命令（4–6 条）
 - 按需加载表：`product` → 业务/权限/集成；`structure` → 新增文件/命名；`tech` → 规范/命令/依赖
-- 若已生成工具专用文件，列出其路径
+- 若已生成工具专用文件或 `docs/standards/*.md`，列出其路径
+- 可将 product/structure/tech 的精华压缩进 `AGENTS.md`；详细分册仍写入所选位置（工具专用目录或 `docs/standards/`）
 
-可将 product/structure/tech 的精华压缩进 `AGENTS.md`；详细分册仍写入工具专用目录（若用户选择了对应工具）。
+### `docs/standards/`（配合 `/flow` 文档体系）
+
+适用于已采用（或准备采用）`/flow` 的项目：三分内容作为**事实·约束**长期维护，按需加载，并遵守 `/flow` 的「变更」写规则。
+
+| 分册 | 文件 | id |
+|------|------|-----|
+| `product` | `docs/standards/product.md` | `STD-product` |
+| `structure` | `docs/standards/structure.md` | `STD-structure` |
+| `tech` | `docs/standards/tech.md` | `STD-tech` |
+
+每份文件必须带 front-matter：
+
+```yaml
+---
+id: STD-product
+title: 产品上下文
+doc_type: standard
+status: current
+scope: [<模块标签，取自实际业务模块>]
+updated: <YYYY-MM-DD>
+---
+```
+
+约束：
+
+- **索引**：在 `docs/standards/README.md` 追加或更新这三行，不改动其他条目；索引不存在时提示「先执行 `/flow init`」，获用户同意后才连同索引一并建立
+- **只留最终态**：不写变更历史、日期注释、「本次新增」
+- **不重复**：详细内容只放一处；若同时生成 `AGENTS.md`，由 `AGENTS.md` 的按需加载表指向这三份文件，不复制正文
+- 该 skill 已安装时可自检：`node .agents/skills/flow/scripts/flow-check.mjs`
 
 ### Claude Code（`CLAUDE.md`）
 
@@ -153,7 +185,7 @@ alwaysApply: false
 3. **输出分析摘要**（5 行内）：技术栈、架构、主要模块，并说明**各分册将纳入哪些章节、省略哪些**及原因。
 4. **写入文件**：
    - 始终（或默认）：`AGENTS.md`
-   - 按选择：Cursor `.mdc` / `CLAUDE.md` / 其他约定入口
-5. **自检**：路径/命令可验证、三分内容无重复、Cursor globs 匹配实际路径。
+   - 按选择：`docs/standards/{product,structure,tech}.md` + 索引 / Cursor `.mdc` / `CLAUDE.md` / 其他约定入口
+5. **自检**：路径/命令可验证、三分内容无重复、Cursor globs 匹配实际路径；选择 `docs/standards/` 时额外检查 front-matter 必填字段与索引条目一一对应。
 
-**只新增/更新**规则与 `AGENTS.md`（及用户确认的工具入口），不修改业务源代码。
+**只新增/更新**规则文件与 `AGENTS.md`（及用户确认的 `docs/standards/`、工具入口），不修改业务源代码。
