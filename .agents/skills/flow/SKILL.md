@@ -43,9 +43,12 @@ disable-model-invocation: true
                                                           ┌──────── 下一轮从更新后的事实出发 ─┘
 ```
 
+> Plan 段内部再分两阶段：**P1 需求确认**（止于 G0）→ **P2 方案设计**（止于 G1）。
+
 | 门禁 | 时机 | 通过条件 |
 |------|------|----------|
-| **G1** | Plan 结束 | 用户回复「确认方案，开始实现」；此前禁止任何代码改动 |
+| **G0** | Plan·P1 结束 | 需求理解已确认；零待确认项且来源结构完整时可直接进 P2。此前禁止写 `docs/` 与改代码 |
+| **G1** | Plan·P2 结束 | 用户回复「确认方案，开始实现」；此前禁止任何代码改动 |
 | **G2** | Go 结束 | 质量检查通过 + 索引同步 + 回溯表输出 |
 
 ## front-matter（必填字段）
@@ -70,7 +73,8 @@ updated: 2026-01-14
 
 | 模式 | 允许读 | 禁止 |
 |------|--------|------|
-| Plan | `AGENTS.md`、当前 Feature、`designs/README.md` 与 `standards/README.md` 命中的少量文件、`plans/README.md` | 读历史 Plan 正文；读无关 Feature/Design |
+| Plan·P1 需求确认 | `AGENTS.md`、当前 Feature（或 `features/README.md`）、`designs/README.md` 索引、必要代码入口 | 读 `designs`/`standards` 正文；读历史 Plan 正文；读无关 Feature/Design |
+| Plan·P2 方案设计 | P1 已读内容 + `designs/README.md`/`standards/README.md` 命中的 0–3 篇正文、`plans/README.md` | 读历史 Plan 正文；读无关 Feature/Design |
 | Go | 当前 Plan、Plan 声明的改动文件、待回填的 Design/Standard/Feature | 重新通读全量 `docs/` |
 
 **反模式（任何模式都禁止）**：全量扫描或 grep `docs/`；把变更历史、日期注释写进 designs/standards；为一次性决定新增 standard；回改已冻结的 Plan 正文（偏差只追加到文末）。
@@ -79,17 +83,14 @@ updated: 2026-01-14
 
 1. 无 `docs/` 或五目录/索引不全 → 进入 **init**，加载 `reference/init.md`
 2. `docs/plans/README.md` 中存在 `status: draft|active` 的 Plan → 询问是否续做 → 进入 **Go**
-3. 其余 → 索取需求（描述 / Feature ID / 文件 / 工单） → 进入 **Plan**
+3. 其余 → 索取需求（描述 / Feature ID / 文件 / 工单） → 进入 **Plan·P1**
 
-## Plan 模式（只写 `docs/plans/`，零代码改动）
+## Plan 模式（两阶段：需求确认 → 方案设计，零代码改动）
 
 **加载 `reference/plan.md`。** 要点：
 
-1. 严格按「读集契约」做最小读取
-2. 无对应 Feature 文件时先按骨架创建（追加）
-3. 新建 `docs/plans/PLAN-<YYYYMMDD>-<slug>.md`（追加，不动旧文件）
-4. 在 `docs/plans/README.md` 追加索引行
-5. 输出方案摘要后**停止**，等待 G1
+- **P1 需求确认（零写入，止于 G0）**：只读需求侧最小集 → 输出「需求理解 / 影响范围 / 待确认项」→ 有疑点则**停止**等待确认；零待确认项且来源结构完整时直接进入 P2
+- **P2 方案设计（止于 G1）**：补读 designs/standards 命中文件 + `plans/README.md` 查重 → 现状与 Gap → 多方案时先给对比、选定后再落档 → 无 Feature 先按骨架创建 → 新建 Plan 并追加索引 → 输出摘要后**停止**
 
 ## Go 模式（实现 + 回填事实）
 
@@ -104,7 +105,7 @@ updated: 2026-01-14
 
 ## 全局硬规则
 
-1. **G1 之前不改代码**；不确定处主动提问
+1. **G0 之前不写 `docs/`、G1 之前不改代码**；不确定处主动提问
 2. **追加 / 变更不可混用**：Plans 只增不改，Designs/Standards/Features 只留最终态
 3. **事实归属唯一**：表结构→`designs/db`，接口→`designs/api`，通用约定→`standards`，决策理由→`others/adr`
 4. **代码与测试是最终事实**：与 Designs 不一致时，以代码为准并立即回填 Designs

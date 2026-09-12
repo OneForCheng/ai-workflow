@@ -18,7 +18,7 @@
     SKILL.md                 # 文档驱动闭环工作流（Plan / Go）
     reference/
       init.md                # 接入文档体系（脚手架 + 宪法模板）
-      plan.md                # Plan 模式（追加过程方案）
+      plan.md                # Plan 模式（需求确认 → 方案设计）
       go.md                  # Go 模式（实现 + 回填事实文档）
     scripts/flow-check.mjs   # 可选的文档一致性校验
 ```
