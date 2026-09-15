@@ -47,20 +47,21 @@
 
 | 目录 | 性质 | 写规则 | 用途 |
 |------|------|--------|------|
-| `docs/features` | 事实·需求 | 新需求追加；状态/验收变更 | 开发起点 |
+| `docs/features` | 事实·需求 | 新需求**追加**（新 ID）；已确认的正文**冻结**，仅 status/关联可变更 | 开发起点 |
 | `docs/plans` | 过程 | **追加**，一轮一文件，冻结不回改 | 方案与 Tasking |
 | `docs/designs` | 事实·镜像 | **变更**，只留最终态 | Source of Truth |
 | `docs/standards` | 事实·约束 | **变更**，只留最终态 | 架构/建表/API/命名/安全规范 |
 | `docs/others` | 记录 | 默认追加 | ADR / Release / 测试用例 |
 
-## 两条写规则
+## 三条写规则
 
 - **追加**：新建文件，不回改历史 → `plans`、`others`
-- **变更**：就地更新为最终态，不保留历史与理由 → `designs`、`standards`、`features`
+- **变更**：就地更新为最终态，不保留历史与理由 → `designs`、`standards`
+- **Feature 冻结**：已确认无问题的 Feature **不得就地更新**，新需求一律新建 `FEAT-<新序号>`；旧 Feature 仅可迁移 `status` 与关联。例外：能指出旧需求有问题且在本轮 Plan 显式声明
 
 ## 闭环
 
-`Features → Plans(追加) → 代码 → Designs(变更) → Standards(变更) → Features(变更) → 下一轮`
+`Features → Plans(追加) → 代码 → Designs(变更) → Standards(变更) → Features(新增 + 旧 Feature 状态迁移) → 下一轮`
 
 ## 读写契约（省 token 的硬约束）
 

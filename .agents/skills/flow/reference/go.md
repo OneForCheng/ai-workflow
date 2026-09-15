@@ -36,11 +36,19 @@
 
 一次性决定 → 写 ADR（`others/adr`），不进 standards。
 
-#### 3.3 `docs/features`（变更）
+#### 3.3 `docs/features`（新增为主 + 旧 Feature 状态迁移）
+
+**新增 Feature（本轮需求落点）**：
 
 - `status` → `done`（部分完成则保持 `active` 并说明）
 - 勾选验收标准，补「验收结果」
-- 补全关联 Plans / Designs
+- 补全关联 Plans / Designs / 前置 Feature
+
+**旧 Feature（仅 status 与关联可动，正文冻结）**：
+
+- `status` → `done`；「关联」追加一行 `后继 Feature：FEAT-00x`
+- **禁止**改其目标、范围、业务规则、验收标准——需求变化已落到新 Feature
+- 例外：Plan 已显式声明旧需求有问题且经 G0 确认 → 才可修改其正文，并在 Plan 偏差段说明
 
 #### 3.4 `docs/others`（追加，按需）
 
@@ -66,6 +74,7 @@
 
 - [ ] 索引与文件一致（无孤儿条目、无未登记文件）
 - [ ] Plan §6 的回填项全部完成
+- [ ] 已确认的旧 Feature 正文未被改写（只有 `status` 与关联行变化）
 - [ ] `designs` / `standards` 中无历史、日期注释、理由残留
 - [ ] 未读历史 Plan 正文，未全量扫描 `docs/`
 - [ ] 可选：`node .agents/skills/flow/scripts/flow-check.mjs`
@@ -79,7 +88,7 @@
 ## 事实文档变更
 - designs：<文件> — <改了什么>
 - standards：<文件 / 无>
-- features：<文件> — status/验收
+- features：新增 `<FEAT-00x>` — 验收/status；旧 `<FEAT-00y>` — 仅 status→done + 后继关联
 
 ## 遗留
 - <项 / 无>

@@ -3,7 +3,9 @@
 目标：先与用户对齐**需求**，再把需求固化为可执行的**过程方案**，并声明 Go 阶段要回填的事实文档。
 
 - **P1 需求确认**：只读 + 对话，**零写入**（不写 `docs/`、不改代码），止于 **G0**
-- **P2 方案设计**：需求确认后落档 Plan（含首次出现的 Feature），止于 **G1**
+- **P2 方案设计**：需求确认后落档 Plan，**默认新建 Feature**，止于 **G1**
+
+> **Feature 冻结原则**：用户已确认无问题的 Feature，**不在原有基础上更新**（不改正文、不勾验收、不追加范围）。本轮需求变化一律**新建** `FEAT-<新序号>`；旧 Feature 仅可改 `status`（→ `done`）与关联字段。唯一例外：能指出旧需求本身有问题——须在 P1 输出中显式列出，经 G0 确认后才允许修改其正文。
 
 ## 前置
 
@@ -17,9 +19,10 @@
 ### P1.1 最小读取
 
 1. 读 `docs/features/README.md` 定位目标 Feature；命中则读该 Feature 文件
-2. 无对应 Feature 文件时记「待创建」，**本阶段不创建**
-3. 读 `docs/designs/README.md` **索引**（仅索引，用于预估影响范围）
-4. 读必要代码（入口模块、相关文件）；不做全库扫描
+2. 判定目标 Feature 是否**已确认冻结**：`status: done`，或用户此前明确确认过其需求 → **本轮不得就地更新**，按「新建 Feature」处理；仅当为 `draft|active` **且从未被确认过** → 才可在 P2 更新其正文（用户确认优先于 `status`）
+3. 无对应 Feature 文件时记「待创建」，**本阶段不创建**
+4. 读 `docs/designs/README.md` **索引**（仅索引，用于预估影响范围）
+5. 读必要代码（入口模块、相关文件）；不做全库扫描
 
 **P1 禁止读**：`designs` / `standards` 正文、历史 Plan 正文、无关 Feature / Design。
 
@@ -41,18 +44,24 @@
 - 涉及模块：
 - 涉及文件（预估）：
 
+## 需求落点
+
+- 新建 Feature：FEAT-<新序号>（默认）
+- 或：修改已有 FEAT-xxx 正文 —— 仅当能指出其需求有问题：<具体问题点>
+
 ## 待确认项
 
 1. [不明确的点]
 ```
 
-无待确认项时写「无」。
+无待确认项时写「无」。**「需求落点」为默认新建**；只有确实发现旧 Feature 的需求本身有误时才写第二行，且必须写明问题点供用户在 G0 判定。
 
 ### P1.4 交互规则（G0）
 
 - 存在待确认项 → 输出后**停止**等待回复；可多轮往复，直到双方对需求理解一致
 - 用户可修正理解偏差、补充上下文、调整需求范围
 - **零待确认项**且需求来源结构完整（Feature / 工单已含目标·范围·AC）→ 直接进入 P2，并在 P2 摘要中标注「需求已明确」
+- 若主张**旧 Feature 需求有问题**，必须在本次输出中点明问题与影响，由用户确认后才可修改其正文
 - **G0 通过前禁止**：写任何 `docs/` 文件、修改任何代码、创建业务文件、安装依赖、执行迁移等改变项目状态的命令
 
 ---
@@ -64,7 +73,7 @@
 ### P2.1 补全读取（按读集契约）
 
 1. 读 `docs/designs/README.md` 与 `docs/standards/README.md`，按 `scope` 与相关性各选 0–3 篇精读
-2. 读 `docs/plans/README.md` 查重：该 Feature 是否已有 `draft|active` 的 Plan；有则先问用户是**续做**还是**新建**
+2. 读 `docs/plans/README.md` 查重：该需求是否已有 `draft|active` 的 Plan；有则先问用户是**续做**还是**新建**
 
 ### P2.2 现状与 Gap 分析
 
@@ -80,15 +89,20 @@
    - 存在多种各有特点 → 最多列举 3 个，用对比表（思路 / 优点 / 局限 / 复杂度）呈现并给出推荐
 2. 多方案时**输出对比后停止等待用户选定**；选定后只把选中方案写入 Plan，**未选方案不落档**
 
-### P2.4 落档（追加为主）
+### P2.4 落档（Feature 新增为主）
 
-1. 无对应 Feature 文件时按骨架创建（追加）；已有 Feature 则同步需求侧变化（变更）
-2. 新建 `docs/plans/PLAN-<YYYYMMDD>-<slug>.md`（追加，不动旧文件；同名已存在则加 `-2`、`-3`）
+1. **Feature 落点（默认新增）**：
+   - 无对应 Feature → 按骨架新建 `FEAT-<下一个序号>-<slug>.md`（追加）
+   - 有对应 Feature 且**已确认冻结** → 同样新建 `FEAT-<下一个序号>`；**不改旧 Feature 正文**，只在 Go 阶段迁移其 `status` 与关联
+   - 有对应 Feature 且**尚未确认**（`draft|active` 且从未被用户确认过）→ 可同步更新其正文（变更）
+   - 例外：能指出旧 Feature 需求有问题 → 在 Plan「关键设计决策」中记录问题点与判断依据，然后修改旧正文（变更）
+   - 序号取现有 FEAT 最大值 +1，**不复用、不跳号**
+2. 新建 `docs/plans/PLAN-<YYYYMMDD>-<slug>.md`（追加，不动旧文件；同名已存在则加 `-2`、`-3`），front-matter 的 `feature` 指向**本轮新增/变更的那个 Feature ID**
 3. 在 `docs/plans/README.md` 追加索引行；新建 Feature 时同步 `docs/features/README.md`
 
 ### P2.5 输出摘要并停止（G1）
 
-输出：需求理解 / 改动清单 / Tasking / 待确认项，然后：
+输出：需求理解 / **需求落点（新建 FEAT-00x，或声明旧 Feature 问题点）** / 改动清单 / Tasking / 待确认项，然后：
 
 > 请确认方案。如无误，请回复：**确认方案，开始实现**
 
@@ -137,7 +151,7 @@ created: 2026-01-14
 ## 6. 影响的事实文档（Go 回填清单）
 - designs：`db/order.md`、`api/order-api.md`
 - standards：无 / `api.md`
-- features：`FEAT-001`
+- features：新增 `FEAT-002`（旧 `FEAT-001` 仅 status→done + 关联）
 - others：无 / `adr/ADR-001-*.md`
 
 ## 7. 执行结果与偏差（Go 结束时追加，不回改上文）
@@ -145,12 +159,14 @@ created: 2026-01-14
 
 > §6 是省 token 的关键：Go 阶段据此**精确定位**要回填的文件，无需扫描 `docs/`。
 
-## Feature 文件骨架（首次创建时使用）
+## Feature 文件骨架（新增 Feature 时使用）
+
+> 默认场景：**每轮新需求 = 一个新 Feature 文件**，旧 Feature 冻结。骨架中的「关联」在 Go 阶段回填。
 
 ```markdown
 ---
-id: FEAT-001
-title: 订单退款
+id: FEAT-002
+title: 订单退款（支持部分退款）
 doc_type: feature
 status: draft
 scope: [order, payment]
@@ -159,7 +175,7 @@ source: <Jira / 链接 / 对话，可选>
 updated: 2026-01-14
 ---
 
-# FEAT-001 订单退款
+# FEAT-002 订单退款（支持部分退款）
 
 ## 目标
 
@@ -175,6 +191,15 @@ updated: 2026-01-14
 - [ ] AC-1 ...
 
 ## 关联
-- Plans：PLAN-20260114-order-refund
+- 前置 Feature：FEAT-001（如需，说明本轮是在其基础上新增）
+- Plans：PLAN-20260114-order-refund-partial
 - Designs：DES-db-order、DES-api-order
+```
+
+**旧 Feature 冻结写法**（仅这两处可改，正文一律不动）：
+
+```markdown
+status: done                 # 由 active 迁移
+## 关联
+- 后继 Feature：FEAT-002     # 追加一行指向新 Feature
 ```
