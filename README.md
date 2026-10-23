@@ -15,6 +15,7 @@
 | `/spike` | 只读代码分析与方案 Spike |
 | `/init-rules` | 为当前项目生成跨工具规则（`AGENTS.md` 等） |
 | `/flow` | 文档驱动闭环：Features → Plans（追加）→ 代码 → Designs/Standards（变更）→ Features（仅新增 + 旧 Feature 状态迁移） |
+| `/flow-plus` | 实验版 CE 闭环：在 `/flow` 兼容的 docs/ 上增加可选 Review 与 Compound（系统进化）；与 `/flow` 对照验证 |
 
 源码目录：`.agents/skills/<name>/SKILL.md`
 
@@ -102,6 +103,14 @@ npx skills update rdd -g
     reference/init.md
     reference/plan.md
     reference/go.md
+    scripts/flow-check.mjs
+  flow-plus/
+    SKILL.md
+    reference/init.md
+    reference/plan.md
+    reference/go.md
+    reference/review.md
+    reference/compound.md
     scripts/flow-check.mjs
 ```
 

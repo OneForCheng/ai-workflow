@@ -2,7 +2,7 @@
 
 跨工具可安装的 **Agent Skills** 工作流库（符合 [Agent Skills](https://agentskills.io) 开放标准），适用于 Cursor、OpenCode、Codex、Claude Code 等支持 Skills 的工具。
 
-本仓库是 skill 的**源码库**，不含业务代码；`/flow` 工作流面向**目标项目**的 `docs/` 体系。
+本仓库是 skill 的**源码库**，不含业务代码；`/flow` 与 `/flow-plus` 工作流面向**目标项目**的 `docs/` 体系（约定兼容；后者为含 Review/Compound 的实验通道）。
 
 ## 目录结构
 
@@ -21,6 +21,15 @@
       plan.md                # Plan 模式（需求确认 → 方案设计）
       go.md                  # Go 模式（实现 + 回填事实文档）
     scripts/flow-check.mjs   # 可选的文档一致性校验
+  flow-plus/
+    SKILL.md                 # 实验：Plan / Go / Review? / Compound
+    reference/
+      init.md                # 独立 init（docs 约定与 flow 兼容）
+      plan.md
+      go.md
+      review.md              # 可选轻量 checklist
+      compound.md            # 系统进化（含对话内 skill 草稿）
+    scripts/flow-check.mjs   # 独立副本（约定兼容 flow）
 ```
 
 ## Skill 编写约定
@@ -39,7 +48,8 @@
 npx skills add . -l            # 列出可发现的 skill（不安装）
 npx skills add . -g -y         # 本地安装到全局（开发自测）
 npx skills update -g           # 更新已安装的全局 skill
-node .agents/skills/flow/scripts/flow-check.mjs <docsDir>   # 校验目标项目 docs/
+node .agents/skills/flow/scripts/flow-check.mjs <docsDir>        # /flow 校验 docs/
+node .agents/skills/flow-plus/scripts/flow-check.mjs <docsDir>   # /flow-plus 校验 docs/
 ```
 
 ## 约束
