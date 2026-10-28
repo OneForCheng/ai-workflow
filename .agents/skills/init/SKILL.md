@@ -1,9 +1,9 @@
 ---
-name: init-rules
+name: init
 description: >-
   Generate cross-tool project context rules (AGENTS.md, docs/standards/*.md, or
   optional Cursor / Claude / Codex / OpenCode rule files) from the current repo.
-  Use when the user invokes /init-rules or asks to bootstrap project AI rules.
+  Use when the user invokes /init or asks to bootstrap project AI rules.
 disable-model-invocation: true
 ---
 

@@ -11,8 +11,7 @@
   rdd/SKILL.md               # 需求驱动：分析 → 方案 → 实现 → 验证（复杂改动可选独立 Review）
   do/SKILL.md                # 轻量实现：分析 → 确认 → 实现 → 回溯
   hld/SKILL.md + reference.md# 高阶方案评审文档
-  spike/SKILL.md             # 只读代码分析与方案对比
-  init-rules/SKILL.md        # 生成项目上下文规则（AGENTS.md 等）
+  init/SKILL.md              # 生成项目上下文规则（AGENTS.md 等）
   flow/
     SKILL.md                 # 文档驱动闭环（Plan / Go / Review? / Compound）
     reference/

@@ -9,11 +9,10 @@
 | 场景 | 用 | 说明 |
 |------|-----|------|
 | 小改、意图清晰 | `/do` | 分析 → 确认 → 实现 → 回溯 |
-| 完整交付（含方案对比） | `/rdd` | 分析 → 方案 → 实现 → 需求回溯；复杂改动会询问是否独立 Code Review |
+| 完整交付（含方案对比） | `/rdd` | 分析 → 方案 → 实现 → 需求回溯；复杂改动会询问是否独立 Code Review；也可只做到方案确认 |
 | 高阶方案评审、不写码 | `/hld` | 产出可归档的评审文档 |
-| 只读摸底 / 可行性 | `/spike` | 不改代码 |
 | 要长期 docs 事实闭环 | `/flow` | Plan → Go → Review? → Compound → 需求回溯 |
-| 新项目 AI 上下文 | `/init-rules` | 生成 `AGENTS.md` / standards 等 |
+| 新项目 AI 上下文 | `/init` | 生成 `AGENTS.md` / standards 等 |
 
 ## Skills 一览
 
@@ -22,8 +21,7 @@
 | `/do` | 简化版：分析 → 确认 → 实现 → 回溯 |
 | `/rdd` | 需求驱动：分析 → 方案 → 实现 → 验证；复杂改动可选独立 Code Review |
 | `/hld` | 高阶方案设计（评审文档，不写代码） |
-| `/spike` | 只读代码分析与方案 Spike |
-| `/init-rules` | 为当前项目生成跨工具规则（`AGENTS.md` 等） |
+| `/init` | 为当前项目生成跨工具规则（`AGENTS.md` 等） |
 | `/flow` | 文档驱动闭环：Features → Plans → 代码 → Designs/Standards → 可选 Review/Compound → 需求回溯 |
 
 源码目录：`.agents/skills/<name>/SKILL.md`
@@ -91,10 +89,12 @@ npx skills update rdd -g
 
 安装后，在支持 Skills 的工具中通过短命令调用，例如：
 
-- Cursor / Codex / OpenCode：`/rdd`、`/do`、`/hld`、`/flow` …
+- Cursor / Codex / OpenCode：`/rdd`、`/do`、`/hld`、`/flow`、`/init` …
 - 或在对话中明确要求使用某个 skill（名称与目录一致）
 
 各 skill 默认 `disable-model-invocation: true`，需**显式调用**才会加载完整说明。
+
+> 说明：`/init` 是独立 skill（生成项目上下文）；`/flow init` 是 `/flow` 的文档体系初始化模式，二者不同。
 
 ## 仓库结构
 
@@ -104,8 +104,7 @@ npx skills update rdd -g
   rdd/SKILL.md
   hld/SKILL.md
   hld/reference.md
-  spike/SKILL.md
-  init-rules/SKILL.md
+  init/SKILL.md
   flow/
     SKILL.md
     reference/init.md

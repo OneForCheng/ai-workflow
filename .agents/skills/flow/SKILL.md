@@ -18,9 +18,9 @@ disable-model-invocation: true
 | 命令 | 职责 |
 |------|------|
 | `/hld` | 上游：高阶方案评审，不改代码 |
-| `/spike` | 上游：只读代码分析与方案对比 |
 | **`/flow`** | **文档驱动闭环**：Plan → Go → Review? → Compound → 需求回溯 |
 | `/rdd` `/do` | 轻量实现流：不维护 `docs/` 体系 |
+| `/init` | 生成项目 AI 上下文（`AGENTS.md` 等）；可配合 `/flow` 的 docs/standards |
 
 需要长期维护的文档体系时用本工作流；只想快速改一处代码用 `/do`；需要方案对比与可选独立审查但不维护 docs 用 `/rdd`。
 
