@@ -2,7 +2,7 @@
 
 跨工具可安装的 **Agent Skills** 工作流库（符合 [Agent Skills](https://agentskills.io) 开放标准）。
 
-适用于 Cursor、OpenCode、Codex、Claude Code 等支持 Skills 的 Agent 工具。
+适用于 Deepseek、Cursor、OpenCode、Codex、Claude Code 等支持 Skills 的 Agent 工具。
 
 ## 按场景选用
 
