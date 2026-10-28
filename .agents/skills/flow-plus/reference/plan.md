@@ -169,6 +169,7 @@ review: skip
 <!-- 或 review: checklist；Go 结束后按 reference/review.md 执行 -->
 
 ## 8. 执行结果与偏差（Go 结束时追加，不回改上文）
+<!-- 字段见 go.md：完成 / 偏差 / 遗留 / 验证 / 工程摩擦（候选 Compound） / 本轮改动文件 -->
 
 ## Review 结果（Review 结束时追加）
 
@@ -177,7 +178,8 @@ review: skip
 
 > §6 是省 token 的关键：Go 阶段据此**精确定位**要回填的文件，无需扫描 `docs/`。  
 > §7 决定是否花费 Review 轮次；默认 skip。  
-> §8 / Review 结果 / Compound 由后续阶段**追加**，禁止回改 §1–§7 已确认正文。
+> §8 / Review 结果 / Compound 由后续阶段**追加**，禁止回改 §1–§7 已确认正文。  
+> §8 的 **工程摩擦** 是 Compound 的强制输入：有记账则不得在 Compound 写「无洞察」。
 
 ## Feature 文件骨架（新增 Feature 时使用）
 
