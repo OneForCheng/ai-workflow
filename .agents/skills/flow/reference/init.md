@@ -1,6 +1,6 @@
-# init 模式：接入文档体系
+# init 模式：接入文档体系（flow）
 
-目标：在目标项目建立 `docs/` 五目录 + 索引 + 根 `AGENTS.md` 宪法。
+目标：在目标项目建立 `docs/` 五目录 + 索引 + 根 `AGENTS.md` 宪法，并指向 **`/flow`** 闭环。
 **只新增，不覆盖、不移动、不改写已有文件。幂等：已存在则跳过，仅补缺失项。**
 
 ## 步骤
@@ -8,7 +8,7 @@
 1. **扫描项目**（只读）：README、构建配置、目录结构、已有 `docs/` 与 `AGENTS.md`、质量命令（typecheck / format / lint / test）
 2. **输出摘要**（5 行内）：技术栈、文档现状、将创建的文件清单；等待用户确认
 3. **创建目录与索引**：`docs/{features,plans,designs,standards,others}/README.md`（模板见下）
-4. **写入根 `AGENTS.md`**：按下方宪法模板，项目信息按实填写，**≤ 80 行**
+4. **写入根 `AGENTS.md`**：按下方宪法模板，项目信息按实填写，**≤ 90 行**（含 Review/Compound 一句说明）
 5. **存量迁移（如有）**：只输出「现有文档 → 建议目录」的对照表，由用户决定是否迁移；不自动移动
 6. **自检**：`node .agents/skills/flow/scripts/flow-check.mjs`
 
@@ -59,15 +59,20 @@
 - **变更**：就地更新为最终态，不保留历史与理由 → `designs`、`standards`
 - **Feature 冻结**：已确认无问题的 Feature **不得就地更新**，新需求一律新建 `FEAT-<新序号>`；旧 Feature 仅可迁移 `status` 与关联。例外：能指出旧需求有问题且在本轮 Plan 显式声明
 
-## 闭环
+## 闭环（flow）
 
-`Features → Plans(追加) → 代码 → Designs(变更) → Standards(变更) → Features(新增 + 旧 Feature 状态迁移) → 下一轮`
+`Features → Plans(追加) → 代码 → Designs/Standards/Features(回填) → Review?(可选) → Compound(系统进化) → 需求回溯 → 下一轮`
+
+- Review 默认 `skip`；复杂改动时询问是否改为 checklist；亦可在 Plan 中预先声明
+- 无论简繁，结束前必须做需求回溯（对照验收确认改动符合需求）
+- Compound：有洞察才写；skill 草稿只出在对话，不自动安装
 
 ## 读写契约（省 token 的硬约束）
 
 - 定位文档：先读该目录 `README.md` 索引，按 `scope` 只打开命中的 1–2 篇
 - **禁止**：全量扫描或 grep `docs/`；读取已归档 `plans/` 正文；在 `designs`/`standards` 写变更历史或日期注释
-- 每篇文档必须有 front-matter：`id / title / doc_type / status / scope / updated`
+- Review / Compound：只读当前 Plan、本轮改动文件清单与 §6 已回填文件，禁止为找灵感扫库
+- 每篇文档必须有 front-matter：`id / title / doc_type / status / scope / updated`（plan 用 `created` + `feature`）
 
 ## 事实归属
 
@@ -82,12 +87,13 @@
 ## 命令
 
 - `/flow` 自动判定状态；`/flow init` 初始化文档体系
+- 文档校验：`node .agents/skills/flow/scripts/flow-check.mjs`
 - 质量命令：`<typecheck / format / lint / test 实际命令>`
 
 ## 按需加载
 
-- 文档驱动闭环工作流：`.agents/skills/flow/SKILL.md`
-- 高阶方案评审：`/hld`；只读分析：`/spike`；轻量实现：`/do`
+- 文档驱动闭环：`.agents/skills/flow/SKILL.md`
+- 高阶方案评审：`/hld`；只读分析：`/spike`；轻量实现：`/do` / `/rdd`
 ```
 
 ## 注意

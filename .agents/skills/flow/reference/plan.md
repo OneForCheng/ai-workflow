@@ -1,6 +1,6 @@
 # Plan 模式（两阶段：需求确认 → 方案设计）
 
-目标：先与用户对齐**需求**，再把需求固化为可执行的**过程方案**，并声明 Go 阶段要回填的事实文档。
+目标：先与用户对齐**需求**，再把需求固化为可执行的**过程方案**，并声明 Go 阶段要回填的事实文档，以及本轮 **Review 策略**（供 Go 之后的轻量审查使用）。
 
 - **P1 需求确认**：只读 + 对话，**零写入**（不写 `docs/`、不改代码），止于 **G0**
 - **P2 方案设计**：需求确认后落档 Plan，**默认新建 Feature**，止于 **G1**
@@ -98,11 +98,23 @@
    - 例外：能指出旧 Feature 需求有问题 → 在 Plan「关键设计决策」中记录问题点与判断依据，然后修改旧正文（变更）
    - 序号取现有 FEAT 最大值 +1，**不复用、不跳号**
 2. 新建 `docs/plans/PLAN-<YYYYMMDD>-<slug>.md`（追加，不动旧文件；同名已存在则加 `-2`、`-3`），front-matter 的 `feature` 指向**本轮新增/变更的那个 Feature ID**
-3. 在 `docs/plans/README.md` 追加索引行；新建 Feature 时同步 `docs/features/README.md`
+3. 在 Plan 中写明 **§7 Review 策略**（见骨架）；默认 `skip`
+4. 在 `docs/plans/README.md` 追加索引行；新建 Feature 时同步 `docs/features/README.md`
 
-### P2.5 输出摘要并停止（G1）
+### P2.5 选择 Review 策略（省 token）
 
-输出：需求理解 / **需求落点（新建 FEAT-00x，或声明旧 Feature 问题点）** / 改动清单 / Tasking / 待确认项，然后：
+| 策略 | 适用 |
+|------|------|
+| `skip`（默认） | 小改动、纯文档、风险低、用户未要求审查 |
+| `checklist` | 涉及鉴权/支付/数据迁移、公共 API、或用户明确要求 Review |
+
+不确定时选 `skip`，并在摘要中说明「可改为 checklist」。勿为「看起来专业」默认 checklist。
+
+> Go 结束后若命中**复杂改动判定**（见 SKILL：定性条件或改动文件数 > 5），即使此处为 `skip`，也会主动询问是否升级为 `checklist`。无论 Review 是否执行，收尾 **G2 需求回溯一律必做**。
+
+### P2.6 输出摘要并停止（G1）
+
+输出：需求理解 / **需求落点** / 改动清单 / Tasking / **Review 策略** / 待确认项，然后：
 
 > 请确认方案。如无误，请回复：**确认方案，开始实现**
 
@@ -154,10 +166,22 @@ created: 2026-01-14
 - features：新增 `FEAT-002`（旧 `FEAT-001` 仅 status→done + 关联）
 - others：无 / `adr/ADR-001-*.md`
 
-## 7. 执行结果与偏差（Go 结束时追加，不回改上文）
+## 7. Review 策略
+review: skip
+<!-- 或 review: checklist；Go 结束后按 reference/review.md 执行 -->
+
+## 8. 执行结果与偏差（Go 结束时追加，不回改上文）
+<!-- 字段见 go.md：完成 / 偏差 / 遗留 / 验证 / 工程摩擦（候选 Compound） / 本轮改动文件 -->
+
+## Review 结果（Review 结束时追加）
+
+## Compound（Compound 结束时追加）
 ```
 
-> §6 是省 token 的关键：Go 阶段据此**精确定位**要回填的文件，无需扫描 `docs/`。
+> §6 是省 token 的关键：Go 阶段据此**精确定位**要回填的文件，无需扫描 `docs/`。  
+> §7 决定是否花费 Review 轮次；默认 skip。  
+> §8 / Review 结果 / Compound 由后续阶段**追加**，禁止回改 §1–§7 已确认正文。  
+> §8 的 **工程摩擦** 是 Compound 的强制输入：有记账则不得在 Compound 写「无洞察」。
 
 ## Feature 文件骨架（新增 Feature 时使用）
 

@@ -96,8 +96,10 @@ disable-model-invocation: true
 
 ## G2 输出（对话）
 
+> **一律输出**：无论改动简繁、Review 是否 skip，都必须完成需求回溯——对照 Plan §5 / Feature 验收，确认改动符合已确认需求。
+
 ```
-## 回溯
+## 需求回溯
 | 验收标准 | 状态 | 说明 |
 
 ## 事实文档变更
@@ -125,4 +127,4 @@ disable-model-invocation: true
 - [ ] 落档 ≤ 2 处（skill 草稿仅对话；待确认的 AGENTS 建议可不落文件）
 - [ ] 未把变更历史写入 designs/standards
 - [ ] 未自动安装 skill
-- [ ] 可选：`node .agents/skills/flow-plus/scripts/flow-check.mjs`
+- [ ] 可选：`node .agents/skills/flow/scripts/flow-check.mjs`
