@@ -8,6 +8,7 @@
 
 | 场景 | 用 | 说明 |
 |------|-----|------|
+| 不确定用哪个 / 统一入口 | `/auto` | 意图识别 → 移交对应 skill；无输入时展示菜单 |
 | 小改、意图清晰 | `/do` | 分析 → 确认 → 实现 → 回溯 |
 | 完整交付（含方案对比） | `/rdd` | 分析 → 方案 → 实现 → 需求回溯；复杂改动会询问是否独立 Code Review；也可只做到方案确认 |
 | 高阶方案评审、不写码 | `/hld` | 产出可归档的评审文档 |
@@ -18,6 +19,7 @@
 
 | 命令 | 说明 |
 |------|------|
+| `/auto` | 统一入口：澄清意图 → 路由并完全移交目标 skill |
 | `/do` | 简化版：分析 → 确认 → 实现 → 回溯 |
 | `/rdd` | 需求驱动：分析 → 方案 → 实现 → 验证；复杂改动可选独立 Code Review |
 | `/hld` | 高阶方案设计（评审文档，不写代码） |
@@ -89,7 +91,7 @@ npx skills update rdd -g
 
 安装后，在支持 Skills 的工具中通过短命令调用，例如：
 
-- Cursor / Codex / OpenCode：`/rdd`、`/do`、`/hld`、`/flow`、`/init` …
+- Cursor / Codex / OpenCode：`/auto`、`/rdd`、`/do`、`/hld`、`/flow`、`/init` …
 - 或在对话中明确要求使用某个 skill（名称与目录一致）
 
 各 skill 默认 `disable-model-invocation: true`，需**显式调用**才会加载完整说明。
@@ -100,13 +102,13 @@ npx skills update rdd -g
 
 ```
 .agents/skills/
-  do/SKILL.md
-  rdd/SKILL.md
-  hld/SKILL.md
-  hld/reference.md
-  init/SKILL.md
+  auto/SKILL.md + route.md
+  do/SKILL.md + route.md
+  rdd/SKILL.md + route.md
+  hld/SKILL.md + route.md + reference.md
+  init/SKILL.md + route.md
   flow/
-    SKILL.md
+    SKILL.md + route.md
     reference/init.md
     reference/plan.md
     reference/go.md
