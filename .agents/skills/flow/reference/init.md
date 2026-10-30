@@ -32,7 +32,7 @@
 | `standards` | `\| ID \| 主题 \| scope \| status \| updated \| 文件 \|` |
 | `others` | `\| ID \| 标题 \| 类型 \| scope \| status \| updated \| 文件 \|` |
 
-`文件` 列写相对 `docs/` 的路径（如 `plans/PLAN-20260114-order-refund.md`）。
+`文件` 列须为 **markdown 链接**（`flow-check` 按 `](path)` 解析），路径相对该目录或相对 `docs/` 均可，例如 `[PLAN-20260114-order-refund.md](PLAN-20260114-order-refund.md)` 或 `[plans/PLAN-….md](plans/PLAN-….md)`。纯文本路径会被判定为「索引缺少文件链接」。
 
 ## 根 `AGENTS.md` 宪法模板
 
