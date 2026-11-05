@@ -27,7 +27,7 @@
 - `AGENTS.md` / 脚本缺少「局部验证」入口，导致只能跑全量或只能手写 vitest 参数
 - 同一摩擦在本轮被踩第二次
 
-> 记账 ≠ 本轮必须修工具链；是否落 AGENTS / standard / 流程改进由 Compound 判定。
+> 记账 ≠ 本轮必须修工具链；是否落机检建议 / AGENTS / standard / 流程改进由 Compound 判定。
 
 ### 3. 回填事实（顺序固定）
 
@@ -44,6 +44,8 @@
 1. 与具体需求无关，未来其他模块也会遵守
 2. 可被明确判定违反（MUST / MUST NOT 可验证）
 3. 不是已有 standard 的重复
+
+**与 Compound 共用口径**（细则见 `reference/compound.md` 洞察判定 / 落点优先级 0–1）：拿不准时可本阶段不写，留给 Compound；写前考虑 counterfactual 与可恢复性；**能用已有质量命令机检拦住的教训，优先记工程摩擦 / 留待 Compound 出机检建议，不要写成 prose standard**。
 
 一次性决定 → 写 ADR（`others/adr`），不进 standards。
 
