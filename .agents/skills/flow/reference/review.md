@@ -1,4 +1,4 @@
-# Review 模式（可选·轻量）
+# Review 模式（默认 checklist·轻量）
 
 前置：Go 已完成实现、质量检查、事实回填、索引同步与 Plan 偏差段追加。
 
@@ -6,29 +6,38 @@
 
 ## 策略判定
 
-1. 读取当前 Plan 的 **§7 Review 策略**（或 front-matter / 文内等价声明）
-2. 根据 Plan §8「本轮改动文件」与改动性质，套用 SKILL 中的**复杂改动判定**
+1. 读取当前 Plan 的 **§7 Review 策略**（未声明视同 `checklist`）。**§7 仅记录期望意图，不单独决定最终是否 skip**——最终分支只看下方「Review 计数」与用户是否明确拒绝
+2. 取 Plan §8「本轮改动文件」（或本轮已知编辑集），按**计数口径**得到 **Review 计数**
 3. 按下方表决定最终行为：
 
-| Plan 策略 | 是否复杂 | 行为 |
-|-----------|----------|------|
-| `checklist` | 任意 | 执行下方 checklist → 通过 **G1.5** 后再进 Compound |
-| `skip`（**默认**；未声明视同 skip） | 否 | 输出一行「Review：跳过」→ 直接加载 `compound.md` |
-| `skip` | **是** | **停止并询问**（见下）；不得擅自跳过询问 |
+### Review 计数口径
 
-### 复杂改动时的询问（Plan 为 skip）
+- **计入**：本轮改动的代码 / 配置 / 非 `docs/` 产物等
+- **不计入**：`docs/` 下任意文件（含 features/plans/designs/standards/others 正文与各目录 `README.md` 索引）
+- rename / 删除：按变更后的路径是否落在 `docs/` 决定是否计入；仅格式化且路径在 `docs/` 内 → 不计入
+
+### 判定表
+
+| Review 计数 | 行为 |
+|-------------|------|
+| **> 3** | 直接执行下方 checklist → 通过 **G1.5** 后再进 Compound（不问；忽略 Plan §7 的 `skip`） |
+| **≤ 3** | **停止并询问**（见下）；仅当用户**明确表示不需要 Review** 才 `skip`，否则执行 checklist |
+
+因此：即使 §7 写 `checklist`，计数 ≤ 3 仍询问（opt-out）；即使 §7 写 `skip`，计数 > 3 仍强制 checklist。
+
+### 小改动时的询问（Review 计数 ≤ 3）
 
 ```
-Go 已完成。本轮判定为复杂改动（原因：<列出命中的判定条，如「改动文件数 > 5」>）。
+Go 已完成。本轮 Review 计数 ≤ 3（已排除 docs/ 与索引）。
 
-是否加强 Review（checklist）？
-- 回复「使用 checklist」：执行轻量四视角审查
-- 回复「跳过 Review」：直接进入 Compound（仍须在收尾做需求回溯）
+是否跳过 Review？
+- 回复「跳过 Review」/「不需要 Review」：直接进入 Compound（仍须在收尾做需求回溯）
+- 其他回复或不明确：执行轻量四视角审查（checklist）
 ```
 
-用户也可随时主动要求 checklist，不受复杂度限制。
+用户也可随时主动要求 checklist，不受计数限制。
 
-**禁止**：启动多 agent；通读全库；重新打开无关 Feature / 历史 Plan；把 Review 写成大段散文。
+**禁止**：把非明确拒绝当成 skip（如「随便」「继续」、无关回复）→ 一律 checklist；启动多 agent；通读全库；重新打开无关 Feature / 历史 Plan；把 Review 写成大段散文。
 
 ## 读集（硬约束）
 
@@ -82,10 +91,10 @@ Go 已完成。本轮判定为复杂改动（原因：<列出命中的判定条�
 - P2：无 / <留作后续>
 ```
 
-`skip`（含用户确认跳过）时追加：
+`skip`（仅用户明确不需要 Review）时追加：
 
 ```markdown
 ## Review 结果
 - 策略：skip
-- 说明：默认跳过 / 复杂改动后用户选择跳过
+- 说明：Review 计数 ≤ 3 且用户明确不需要 Review
 ```

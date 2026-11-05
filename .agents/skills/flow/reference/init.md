@@ -61,9 +61,9 @@
 
 ## 闭环（flow）
 
-`Features → Plans(追加) → 代码 → Designs/Standards/Features(回填) → Review?(可选) → Compound(系统进化) → 需求回溯 → 下一轮`
+`Features → Plans(追加) → 代码 → Designs/Standards/Features(回填) → Review（默认 checklist） → Compound(系统进化) → 需求回溯 → 下一轮`
 
-- Review 默认 `skip`；复杂改动时询问是否改为 checklist；亦可在 Plan 中预先声明
+- Review 默认 `checklist`；Review 计数 ≤ 3（排除 `docs/` 与索引）时询问是否跳过（仅明确不需要才 skip）；> 3 强制 checklist
 - 无论简繁，结束前必须做需求回溯（对照验收确认改动符合需求）
 - Compound：有洞察才写；skill 草稿只出在对话，不自动安装
 

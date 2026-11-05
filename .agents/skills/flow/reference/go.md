@@ -83,10 +83,12 @@
 - 工程摩擦（候选 Compound）：无 / <现象 → 绕过 → 期望改进；可多条>
 - 本轮改动文件：
   - `path/a`
-  - `path/b`
+  - `docs/plans/PLAN-….md`
+  - `docs/features/README.md`
+- Review 计数：1（已排除 docs/**；口径见 review.md）
 ```
 
-> **本轮改动文件**与 **工程摩擦** 供 Review / Compound 读集使用，避免后续阶段扫库或「对话里提过、Plan 里消失」。
+> **本轮改动文件**列全量路径；**Review 计数**排除 `docs/`（含索引）后供询问门禁使用。二者与 **工程摩擦** 一并供 Review / Compound 读集，避免后续阶段扫库或「对话里提过、Plan 里消失」。
 
 ### 6. 自检（Go 出口，非 G2）
 
@@ -101,7 +103,7 @@
 
 自检通过后：
 
-1. 对话简短确认：「Go 完成，进入 Review」；若 Plan 为 `skip` 且命中复杂改动判定，由 `review.md` 负责询问是否升级 checklist
+1. 对话简短确认：「Go 完成，进入 Review」；Review 计数 ≤ 3（排除 docs/）时由 `review.md` 询问是否跳过，否则直接 checklist
 2. **加载 `reference/review.md`** 并执行
 3. **禁止**在此输出完整 G2 回溯表（G2 在 Compound 结束时输出，且**一律含需求回溯**）
 

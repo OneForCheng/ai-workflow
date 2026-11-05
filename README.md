@@ -12,7 +12,7 @@
 | 小改、意图清晰 | `/do` | 分析 → 确认 → 实现 → 回溯 |
 | 完整交付（含方案对比） | `/rdd` | 分析 → 方案 → 实现 → 需求回溯；复杂改动会询问是否独立 Code Review；也可只做到方案确认 |
 | 高阶方案评审、不写码 | `/hld` | 产出可归档的评审文档 |
-| 要长期 docs 事实闭环 | `/flow` | Plan → Go → Review? → Compound → 需求回溯 |
+| 要长期 docs 事实闭环 | `/flow` | Plan → Go → Review → Compound → 需求回溯 |
 | 新项目 AI 上下文 | `/init` | 生成 `AGENTS.md` / standards 等 |
 
 ## Skills 一览
@@ -24,7 +24,7 @@
 | `/rdd` | 需求驱动：分析 → 方案 → 实现 → 验证；复杂改动可选独立 Code Review |
 | `/hld` | 高阶方案设计（评审文档，不写代码） |
 | `/init` | 为当前项目生成跨工具规则（`AGENTS.md` 等） |
-| `/flow` | 文档驱动闭环：Features → Plans → 代码 → Designs/Standards → 可选 Review/Compound → 需求回溯 |
+| `/flow` | 文档驱动闭环：Features → Plans → 代码 → Designs/Standards → Review（默认 checklist）/Compound → 需求回溯 |
 
 源码目录：`.agents/skills/<name>/SKILL.md`
 

@@ -1,9 +1,10 @@
 ---
 name: flow
 description: >-
-  Document-driven closed-loop workflow (Plan / Go / optional Review / Compound):
+  Document-driven closed-loop workflow (Plan / Go / Review / Compound):
   feature specs → append-only plans → code → mutate designs/standards to final
-  state while confirmed features stay frozen; optional lightweight review and
+  state while confirmed features stay frozen; default lightweight checklist
+  review (ask to skip only when Review count ≤3, excluding docs/) and
   system-evolution compounding. Use when the user invokes /flow or wants
   document-centric delivery with docs/ as the AI context and constraint system.
 disable-model-invocation: true
@@ -11,14 +12,14 @@ disable-model-invocation: true
 
 # 文档驱动闭环工作流（Plan / Go / Review / Compound）
 
-用 `docs/` 五目录充当 AI 的上下文与约束系统：**过程方案追加（只增不改），事实方案变更（只留最终态）**；Go 之后可选轻量 Review，再按需 Compound（系统进化），一轮结束后回到起点。
+用 `docs/` 五目录充当 AI 的上下文与约束系统：**过程方案追加（只增不改），事实方案变更（只留最终态）**；Go 之后默认轻量 Review（checklist），再按需 Compound（系统进化），一轮结束后回到起点。
 
 ## 使用边界
 
 | 命令 | 职责 |
 |------|------|
 | `/hld` | 上游：高阶方案评审，不改代码 |
-| **`/flow`** | **文档驱动闭环**：Plan → Go → Review? → Compound → 需求回溯 |
+| **`/flow`** | **文档驱动闭环**：Plan → Go → Review → Compound → 需求回溯 |
 | `/rdd` `/do` | 轻量实现流：不维护 `docs/` 体系 |
 | `/init` | 生成项目 AI 上下文（`AGENTS.md` 等）；可配合 `/flow` 的 docs/standards |
 
@@ -40,7 +41,7 @@ disable-model-invocation: true
 
 ```
 起点 Features(读) → [追加]Plans → 代码 + 必要测试 → [变更]Designs/Standards/Features
-                         → Review?(可选) → Compound(有洞察才写) → G2 需求回溯
+                         → Review（默认 checklist） → Compound(有洞察才写) → G2 需求回溯
                                                                                                                   │
                                                               ┌──────── 下一轮从更新后的事实出发 ─────────────┘
 ```
@@ -53,18 +54,17 @@ disable-model-invocation: true
 |------|------|----------|
 | **G0** | Plan·P1 结束 | 需求理解已确认（若主张旧 Feature 有问题，须在此点明具体问题）；零待确认项且来源结构完整时可直接进 P2。此前禁止写 `docs/` 与改代码 |
 | **G1** | Plan·P2 结束 | 用户回复「确认方案，开始实现」；此前禁止任何代码改动 |
-| **G1.5** | Review（若启用） | checklist 已输出；P1 须先修复或征得用户接受后再进 Compound。最终策略为 `skip` 时本门禁直接通过 |
+| **G1.5** | Review | checklist 已输出；P1 须先修复或征得用户接受后再进 Compound。最终策略为 `skip`（用户明确不需要 Review）时本门禁直接通过 |
 | **G2** | Compound 结束 | 质量检查已通过 + 索引同步 + Compound 已处理（或声明无洞察）+ **需求回溯表已输出**（无论改动简繁，一律对照验收/需求确认符合性） |
 
-## 复杂改动判定（Review 询问）
+## 小改动可询问跳过 Review
 
-满足**任一**即视为复杂改动（Go 结束后用于是否升级 Review）：
+Go 结束后按 **Review 计数**决定是否询问跳过（口径与判定见 `reference/review.md`）：
 
-- 多模块 / 跨层
-- 涉及数据模型或持久化
-- 涉及权限 / 安全 / 资金类
-- 方案阶段有多方案抉择，或实现相对方案有重要偏差
-- **本轮改动文件数 > 5**
+- **计数口径**：本轮改动文件中**排除** `docs/` 下全部文件（含各目录索引）后的数量
+- **Review 计数 > 3** → 直接执行 checklist（不问）
+- **Review 计数 ≤ 3** → 先询问是否跳过；仅当用户**明确表示不需要 Review** 才 `skip`，否则默认 checklist
+- Plan §7 仅记录期望意图，**不改变**上述判定分支
 
 ## front-matter（必填字段）
 
@@ -107,7 +107,7 @@ updated: 2026-01-14
 **加载 `reference/plan.md`。** 要点：
 
 - **P1 需求确认（零写入，止于 G0）**：只读需求侧最小集 → 输出「需求理解 / 影响范围 / 待确认项」→ 有疑点则**停止**等待确认；零待确认项且来源结构完整时直接进入 P2
-- **P2 方案设计（止于 G1）**：补读 designs/standards 命中文件 + `plans/README.md` 查重 → 现状与 Gap → 多方案时先给对比、选定后再落档 → **默认新建 Feature** → 新建 Plan（含 **Review 策略**，默认 `skip`）并追加索引 → 输出摘要后**停止**
+- **P2 方案设计（止于 G1）**：补读 designs/standards 命中文件 + `plans/README.md` 查重 → 现状与 Gap → 多方案时先给对比、选定后再落档 → **默认新建 Feature** → 新建 Plan（含 **Review 策略**，默认 `checklist`）并追加索引 → 输出摘要后**停止**
 
 ## Go 模式（实现 + 回填事实）
 
@@ -120,13 +120,15 @@ updated: 2026-01-14
 5. 自检；可选 `node .agents/skills/flow/scripts/flow-check.mjs`
 6. **不输出 G2** → 进入 Review
 
-## Review 模式（可选·轻量）
+## Review 模式（默认 checklist·轻量）
 
-**加载 `reference/review.md`。**
+**加载 `reference/review.md`。** 先按 Review 计数判定，再执行或 skip：
 
-- Plan 声明 `review: skip`（**默认**）且**非**复杂改动 → 直接进入 Compound
-- Plan 声明 `checklist`，或判定为复杂改动后用户同意加强审查 → 固定 ≤4 条视角单轮输出；P1 须处理后再进 Compound
-- 复杂改动且 Plan 仍为 `skip` 时：**主动询问**是否改为 checklist（详见 `reference/review.md`）
+1. 计算 Review 计数（排除 `docs/` 与索引）
+2. **计数 ≤ 3** → **先询问**是否跳过；仅用户明确表示不需要 Review 才 `skip`，否则 checklist
+3. **计数 > 3** → 直接 checklist，不询问
+4. 执行 checklist 时：固定 ≤4 条视角单轮输出；P1 须处理后再进 Compound
+5. Plan §7 可写 `checklist`/`skip`，但**仅表达意图**，最终以本条 1–3 为准（详见 `reference/review.md`）
 
 ## Compound 模式（系统进化）
 
@@ -146,7 +148,7 @@ updated: 2026-01-14
 3. **事实归属唯一**：表结构→`designs/db`，接口→`designs/api`，通用约定→`standards`，决策理由→`others/adr`
 4. **代码与测试是最终事实**：与 Designs 不一致时，以代码为准并立即回填 Designs
 5. **最小变更**：只改 Plan 声明的范围；扩大范围先征得同意并追加到偏差段
-6. **Review 默认可选、Compound 禁止空转**：无洞察时不得为凑流程改 `docs/` 或 `AGENTS.md`；**但** Go 已记账的工程摩擦 / 验证绕过 **必须**进入 Compound（至少 Plan「流程改进」，常建议 AGENTS 补丁）——只写流程改进不算空转，也不得写成「无系统级沉淀」
+6. **Review 默认 checklist、Compound 禁止空转**：仅 Review 计数 ≤ 3 且用户明确不需要时才可 skip；无洞察时不得为凑流程改 `docs/` 或 `AGENTS.md`；**但** Go 已记账的工程摩擦 / 验证绕过 **必须**进入 Compound（至少 Plan「流程改进」，常建议 AGENTS 补丁）——只写流程改进不算空转，也不得写成「无系统级沉淀」
 7. **Skill 草稿不落库**：可安装 skill 草稿只出现在对话中，由用户决定是否写入项目或全局 skill 目录
 8. **需求回溯不可跳过**：G2 必须输出对照验收/需求的回溯表
 9. 语言与用户一致；本工作流产出的 docs 是正式产物，但不额外生成总结/报告类文件（回溯表在对话输出即可）

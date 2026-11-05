@@ -2,7 +2,7 @@
 
 跨工具可安装的 **Agent Skills** 工作流库（符合 [Agent Skills](https://agentskills.io) 开放标准），适用于 Cursor、OpenCode、Codex、Claude Code 等支持 Skills 的工具。
 
-本仓库是 skill 的**源码库**，不含业务代码；`/flow` 工作流面向**目标项目**的 `docs/` 体系（含可选 Review / Compound）。
+本仓库是 skill 的**源码库**，不含业务代码；`/flow` 工作流面向**目标项目**的 `docs/` 体系（含 Review / Compound）。
 
 ## 目录结构
 
@@ -14,12 +14,12 @@
   hld/SKILL.md + route.md + reference.md  # 高阶方案评审文档
   init/SKILL.md + route.md   # 生成项目上下文规则（AGENTS.md 等）
   flow/
-    SKILL.md + route.md      # 文档驱动闭环（Plan / Go / Review? / Compound）
+    SKILL.md + route.md      # 文档驱动闭环（Plan / Go / Review / Compound）
     reference/
       init.md                # 接入文档体系（脚手架 + 宪法模板）
       plan.md                # Plan 模式（需求确认 → 方案设计）
       go.md                  # Go 模式（实现 + 回填事实文档）
-      review.md              # 可选轻量 checklist（复杂改动时询问）
+      review.md              # 默认轻量 checklist（Review 计数 ≤3 可询问跳过，不含 docs/）
       compound.md            # 系统进化（含对话内 skill 草稿）
     scripts/flow-check.mjs   # 可选的文档一致性校验
 ```
@@ -62,7 +62,7 @@ node .agents/skills/flow/scripts/flow-check.mjs <docsDir>   # /flow 校验 docs/
 | `docs/standards` | 事实·约束 | **变更**，只留最终态 |
 | `docs/others` | 记录 | 默认**追加** |
 
-- 闭环：`Features → Plans → 代码/skill → Designs/Standards/Features → Review? → Compound → 需求回溯`
+- 闭环：`Features → Plans → 代码/skill → Designs/Standards/Features → Review → Compound → 需求回溯`
 - 定位文档：先读该目录 `README.md` 索引，按 `scope` 只打开命中的 1–2 篇；禁止全量扫描 `docs/`
-- Review 默认 `skip`；结束前必须做需求回溯；Compound 有洞察才写
+- Review 默认 `checklist`；Review 计数 ≤ 3（排除 `docs/`）时询问是否跳过（仅明确不需要才 skip）；> 3 强制 checklist；结束前必须做需求回溯；Compound 有洞察才写
 - 校验：`node .agents/skills/flow/scripts/flow-check.mjs`

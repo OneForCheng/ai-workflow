@@ -98,19 +98,19 @@
    - 例外：能指出旧 Feature 需求有问题 → 在 Plan「关键设计决策」中记录问题点与判断依据，然后修改旧正文（变更）
    - 序号取现有 FEAT 最大值 +1，**不复用、不跳号**
 2. 新建 `docs/plans/PLAN-<YYYYMMDD>-<slug>.md`（追加，不动旧文件；同名已存在则加 `-2`、`-3`），front-matter 的 `feature` 指向**本轮新增/变更的那个 Feature ID**
-3. 在 Plan 中写明 **§7 Review 策略**（见骨架）；默认 `skip`
+3. 在 Plan 中写明 **§7 Review 策略**（见骨架）；默认 `checklist`
 4. 在 `docs/plans/README.md` 追加索引行；新建 Feature 时同步 `docs/features/README.md`
 
 ### P2.5 选择 Review 策略（省 token）
 
 | 策略 | 适用 |
 |------|------|
-| `skip`（默认） | 小改动、纯文档、风险低、用户未要求审查 |
-| `checklist` | 涉及鉴权/支付/数据迁移、公共 API、或用户明确要求 Review |
+| `checklist`（默认） | 常规实现；未声明时视同 checklist；**仅表达意图** |
+| `skip` | 记录「希望跳过」的意图；**不改变** Go 后判定（仍按 Review 计数询问/强制） |
 
-不确定时选 `skip`，并在摘要中说明「可改为 checklist」。勿为「看起来专业」默认 checklist。
+不确定时选 `checklist`。勿为省一轮对话默认写 `skip`。
 
-> Go 结束后若命中**复杂改动判定**（见 SKILL：定性条件或改动文件数 > 5），即使此处为 `skip`，也会主动询问是否升级为 `checklist`。无论 Review 是否执行，收尾 **G2 需求回溯一律必做**。
+> Go 结束后按 **Review 计数**定最终行为（见 `reference/review.md`；**排除 `docs/` 与索引**）：计数 > 3 强制 checklist；≤ 3 询问是否跳过，仅用户明确不需要才 skip。§7 不单独决定 skip。无论 Review 是否执行，收尾 **G2 需求回溯一律必做**。
 
 ### P2.6 输出摘要并停止（G1）
 
@@ -167,8 +167,8 @@ created: 2026-01-14
 - others：无 / `adr/ADR-001-*.md`
 
 ## 7. Review 策略
-review: skip
-<!-- 或 review: checklist；Go 结束后按 reference/review.md 执行 -->
+review: checklist
+<!-- 或 review: skip（仅记录意图）；最终以 reference/review.md 的 Review 计数为准 -->
 
 ## 8. 执行结果与偏差（Go 结束时追加，不回改上文）
 <!-- 字段见 go.md：完成 / 偏差 / 遗留 / 验证 / 工程摩擦（候选 Compound） / 本轮改动文件 -->
@@ -179,7 +179,7 @@ review: skip
 ```
 
 > §6 是省 token 的关键：Go 阶段据此**精确定位**要回填的文件，无需扫描 `docs/`。  
-> §7 决定是否花费 Review 轮次；默认 skip。  
+> §7 仅记录期望意图（默认 checklist），**不改变** Go 后判定；最终是否 skip 以 Review 计数（排除 docs/）+ 用户明确拒绝为准。  
 > §8 / Review 结果 / Compound 由后续阶段**追加**，禁止回改 §1–§7 已确认正文。  
 > §8 的 **工程摩擦** 是 Compound 的强制输入：有记账则不得在 Compound 写「无洞察」。
 
