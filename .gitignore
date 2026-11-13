@@ -30,4 +30,4 @@ coverage
 *.tsbuildinfo
 .tsconfig.check.*.json
 docs/
-ideas
+idea
