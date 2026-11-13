@@ -12,6 +12,7 @@
  *   4. status 取值是否合法；plan.feature 是否指向已存在的 feature
  *   5. 索引 README 与实际文件是否双向一致
  *   6. designs/standards 是否残留变更历史（违反「只留最终态」）
+ *   7. 非文档体系文件（无 front-matter 且不符合命名、未登记索引）仅 WARN 跳过
  */
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
@@ -158,6 +159,11 @@ function main() {
   const indexAbs = join(DOCS, 'README.md');
   const files = walk(DOCS).filter((f) => f !== indexAbs && !f.endsWith(`${sep}README.md`));
 
+  const indexByDir = new Map();
+  for (const dir of Object.keys(DIRS)) {
+    indexByDir.set(dir, parseIndex(join(DOCS, dir, 'README.md')));
+  }
+
   const idMap = new Map(); // id -> docs 内相对路径
   const pathId = new Map(); // docs 内相对路径 -> id
   const featureIds = new Set();
@@ -176,6 +182,13 @@ function main() {
     const { data, body } = parseFrontMatter(readFileSync(abs, 'utf8'));
 
     if (!data) {
+      // 非文档体系文件：不符合目录命名规范、也未被索引引用（如历史需求草稿）→ 跳过
+      const { paths } = indexByDir.get(dir);
+      const linked = paths.some((p) => p.endsWith(base));
+      if (!FILE_RE[dir].test(base) && !linked) {
+        warn(`未纳入文档体系（无 front-matter 且未匹配命名/索引），已跳过：${shown(rDocs)}`);
+        continue;
+      }
       err(`缺少 front-matter：${shown(rDocs)}`);
       continue;
     }
@@ -236,7 +249,7 @@ function main() {
 
   // 索引 ↔ 文件双向一致性
   for (const dir of Object.keys(DIRS)) {
-    const { ids, paths } = parseIndex(join(DOCS, dir, 'README.md'));
+    const { ids, paths } = indexByDir.get(dir);
     for (const rDocs of perDir.get(dir) || []) {
       const id = pathId.get(rDocs);
       const base = rDocs.split(sep).pop();
