@@ -1,0 +1,5 @@
+exit: 1
+flags: state
+state.status 非法
+state.next 非法
+signals.jsonl 第 1 行不是合法 JSON

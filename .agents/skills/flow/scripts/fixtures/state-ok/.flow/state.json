@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "root": {
+    "path": ".",
+    "mode": "repo",
+    "tracked": true
+  },
+  "status": "done",
+  "next": "review",
+  "currentRun": "RUN-20260101-1",
+  "updated": "2026-01-01T10:00:00+08:00"
+}

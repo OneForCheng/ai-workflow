@@ -136,7 +136,8 @@
    - 序号取现有 FEAT 最大值 +1，**不复用、不跳号**
 2. 新建 `docs/plans/PLAN-<YYYYMMDD>-<slug>.md`（追加，不动旧文件；同名已存在则加 `-2`、`-3`），front-matter 的 `feature` 指向**本轮新增/变更的那个 Feature ID**
 3. 在 Plan 中写明 **§7 Review 策略**（见骨架）；默认 `checklist`
-4. 在 `docs/plans/README.md` 追加索引行；新建 Feature 时同步 `docs/features/README.md`
+4. front-matter 用 `covers` 声明本轮负责的 AC（多轮 Feature 必需；缺省=覆盖 Feature 全部）
+5. 在 `docs/plans/README.md` 追加索引行；新建 Feature 时同步 `docs/features/README.md`
 
 ### P2.6 选择 Review 策略（省 token）
 
@@ -151,9 +152,13 @@
 
 ### P2.7 输出摘要并停止（G1）
 
+复杂 Plan 可在请求 G1 前先跑一次 `/flow run --dry-run`（只读，允许 draft）：核对每条 Task 的落点、依赖、验证与预算，把缺口回填到 P2。dry-run 报告可作为 G1 摘要的一部分。
+
 输出：需求理解 / **需求落点** / 改动清单 / Tasking / **Review 策略** / 待确认项，然后：
 
 > 请确认方案。如无误，请回复：**确认方案，开始实现**
+
+用户确认后：在 Plan front-matter 写 `approved: <YYYY-MM-DD>`（只动 front-matter，不改正文），再进入 Go。`approved` 是 `/flow run` 的放行条件。
 
 **G1 通过前禁止**：修改任何代码、创建业务文件、安装依赖、执行迁移等改变项目状态的命令。
 
@@ -168,6 +173,8 @@ title: 订单退款实现方案
 doc_type: plan
 status: draft
 feature: FEAT-001
+approved: 2026-01-14      # G1 通过后写入；run 模式的放行条件
+covers: [AC-1, AC-2]      # 本轮负责的 AC；缺省=Feature 全部
 scope: [order, payment]
 created: 2026-01-14
 ---
@@ -224,6 +231,7 @@ review: checklist
 ## Compound（Compound 结束时追加）
 ```
 
+> `covers` / `approved`：多轮 Feature 每个 Plan 只声明自己负责的 AC；`--trace` 据此校验，缺省退回「覆盖全部 AC」。`approved` 由 G1 写入，run 前置检查必读。
 > §6 是省 token 的关键：Go 阶段据此**精确定位**要回填的文件，无需扫描 `docs/`。  
 > §7 仅记录期望意图（默认 checklist），**不改变** Go 后判定；高风险路径命中即强制 checklist，否则按 Review 计数（排除 docs/）询问/强制。  
 > §8 / Review 结果 / Compound 由后续阶段**追加**，禁止回改 §1–§7 已确认正文。  

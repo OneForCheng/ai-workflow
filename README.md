@@ -114,6 +114,7 @@ npx skills update rdd -g
     reference/go.md
     reference/review.md
     reference/compound.md
+    reference/run.md
     scripts/flow-check.mjs
     scripts/fixtures/      # checker 自测样本（--fixtures）
 ```

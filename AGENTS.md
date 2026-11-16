@@ -20,9 +20,10 @@
       plan.md                # Plan 模式（需求确认 → 方案设计）
       go.md                  # Go 模式（实现 + 回填事实文档）
       review.md              # 轻量 checklist（高风险路径强制；未命中且计数 ≤3 可询问跳过）
+      run.md                 # 无人值守执行（信封 / 决策窗口 / 账本 / park / 晨报 / dry-run）
       compound.md            # 系统进化（含对话内 skill 草稿）
     scripts/flow-check.mjs   # 可选的文档一致性校验（结构 / --map / --trace / --gates / --fixtures）
-    scripts/fixtures/        # checker 自测样本（当前 8 个，改脚本必跑）
+    scripts/fixtures/        # checker 自测样本（改脚本必跑）
 ```
 
 ## Skill 编写约定
@@ -47,6 +48,7 @@ node .agents/skills/flow/scripts/flow-check.mjs docs            # 结构校验
 node .agents/skills/flow/scripts/flow-check.mjs docs --trace    # AC↔Task 矩阵校验
 node .agents/skills/flow/scripts/flow-check.mjs docs --map      # 目录覆盖视图（anchors）
 node .agents/skills/flow/scripts/flow-check.mjs docs --gates    # 质量门契约校验
+node .agents/skills/flow/scripts/flow-check.mjs docs --state    # .flow/ 运行状态校验
 node .agents/skills/flow/scripts/flow-check.mjs --fixtures      # checker 自测（全部通过）
 ```
 

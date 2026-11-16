@@ -465,6 +465,13 @@ function checkTrace(res) {
     const feat = featureById.get(plan.data.feature);
     if (!feat) continue;
     const acs = [...new Set(feat.body.match(/\bAC-\d+\b/g) || [])];
+    const covers = Array.isArray(plan.data.covers) ? plan.data.covers.map(String) : null;
+    const targets = covers || acs;
+    if (covers) {
+      for (const ac of covers) {
+        if (!acs.includes(ac)) err(res, `covers 引用了 Feature 中不存在的 AC：${ac}（${shown(res, plan.rDocs)}）`);
+      }
+    }
     const matrix = findMatrix(plan.body);
     if (!matrix) {
       warn(res, `缺少 AC↔Task 矩阵（--trace 跳过）：${shown(res, plan.rDocs)}`);
@@ -476,7 +483,7 @@ function checkTrace(res) {
       const status = r.length > 3 ? r[r.length - 1] : '';
       for (const id of ids) rows.set(id, { task: r[1] || '', verify: r[2] || '', status });
     }
-    for (const ac of acs) {
+    for (const ac of targets) {
       if (!rows.has(ac)) err(res, `AC 未出现在 Plan 覆盖矩阵：${ac}（${shown(res, plan.rDocs)}）`);
     }
     for (const [ac, row] of rows) {
@@ -484,6 +491,7 @@ function checkTrace(res) {
         err(res, `覆盖矩阵引用了 Feature 中不存在的 AC：${ac}（${shown(res, plan.rDocs)}）`);
         continue;
       }
+      if (covers && !targets.includes(ac)) continue;
       if (/^(后续|deferred|later)$/i.test(row.status.trim())) continue;
       if (!row.task || /^[-—无]+$/.test(row.task.trim())) {
         err(res, `AC 未分配 Task：${ac}（${shown(res, plan.rDocs)}）`);
@@ -540,6 +548,88 @@ function checkGates(res) {
     if (g.on_fail && !['fix', 'park'].includes(g.on_fail)) {
       err(res, `质量门 ${id} 的 on_fail 非法：${g.on_fail}（允许 fix/park）`);
     }
+  }
+}
+
+const FLOW_STATUS = ['idle', 'running', 'paused', 'done'];
+const FLOW_NEXT = ['none', 'review', 'compound', 'plan'];
+
+function hasTaskTable(body) {
+  return parseTables(body).some((t) => {
+    if (!t.length) return false;
+    const head = t[0].map((c) => c.toLowerCase());
+    return head.includes('任务') && head.includes('状态');
+  });
+}
+
+/** 校验 <root>/.flow：state.json、当前账本、signals.jsonl */
+function checkState(res) {
+  const dir = join(res.root, '.flow');
+  if (!existsSync(dir)) {
+    warn(res, `未初始化 .flow/（run 模式可选）：${dir}`);
+    return;
+  }
+  const statePath = join(dir, 'state.json');
+  if (!existsSync(statePath)) {
+    err(res, `缺少 ${dir}/state.json`);
+    return;
+  }
+  let state;
+  try {
+    state = JSON.parse(readFileSync(statePath, 'utf8'));
+  } catch (e) {
+    err(res, `state.json 不是合法 JSON：${e.message}`);
+    return;
+  }
+  if (typeof state.schema !== 'number') err(res, 'state.schema 必须是数字');
+  if (!FLOW_STATUS.includes(state.status)) err(res, `state.status 非法：${state.status}`);
+  if (!FLOW_NEXT.includes(state.next)) err(res, `state.next 非法：${state.next}`);
+  if (state.mode !== undefined && !['run', 'dry'].includes(state.mode)) {
+    err(res, `state.mode 非法：${state.mode}（允许 run/dry）`);
+  }
+  if (!state.root || !['repo', 'workspace'].includes(state.root.mode)) {
+    err(res, `state.root.mode 非法：${state.root && state.root.mode}`);
+  }
+  if (typeof state.root?.tracked !== 'boolean') err(res, 'state.root.tracked 必须是 boolean');
+  else if (!state.root.tracked) warn(res, '证据层未纳入 git（tracked=false）：换机器或 CI 将丢失历史');
+  if (!state.updated) err(res, 'state.updated 缺失');
+  if (state.status === 'running') {
+    if (!state.currentRun) err(res, 'state.status=running 时 currentRun 必填');
+    else if (!existsSync(join(dir, 'runs', `${state.currentRun}.md`))) {
+      err(res, `缺少账本：.flow/runs/${state.currentRun}.md`);
+    }
+  }
+  if (state.currentRun) {
+    const runPath = join(dir, 'runs', `${state.currentRun}.md`);
+    if (existsSync(runPath)) {
+      const { data, body } = parseFrontMatter(readFileSync(runPath, 'utf8'));
+      if (!data) err(res, `账本缺少 front-matter：.flow/runs/${state.currentRun}.md`);
+      else {
+        if (data.mode !== undefined && !['run', 'dry'].includes(String(data.mode))) {
+          err(res, `账本 mode 非法：${data.mode}（允许 run/dry）`);
+        }
+        if (!data.run) err(res, '账本缺少 run');
+        if (!data.plan) err(res, '账本缺少 plan');
+        else {
+          const planIds = new Set(res.docs.filter((d) => d.type === 'plan').map((d) => d.data.id));
+          if (!planIds.has(String(data.plan))) err(res, `账本引用了不存在的 Plan：${data.plan}`);
+        }
+        if (!hasTaskTable(body)) err(res, '账本缺少任务表（表头需含「任务」「状态」）');
+      }
+    }
+  }
+  const sig = join(dir, 'signals.jsonl');
+  if (existsSync(sig)) {
+    readFileSync(sig, 'utf8').split('\n').forEach((line, i) => {
+      const l = line.trim();
+      if (!l) return;
+      try {
+        const ev = JSON.parse(l);
+        if (!ev.ts || !ev.event) err(res, `signals.jsonl 第 ${i + 1} 行缺少 ts/event`);
+      } catch {
+        err(res, `signals.jsonl 第 ${i + 1} 行不是合法 JSON`);
+      }
+    });
   }
 }
 
@@ -626,6 +716,7 @@ function runFixtures() {
     const res = checkDocs(join(fdir, 'docs'), { map: flags.has('map') });
     if (flags.has('trace')) checkTrace(res);
     if (flags.has('gates')) checkGates(res);
+    if (flags.has('state')) checkState(res);
     const text = render(res, {});
     const code = res.errors.length ? 1 : 0;
     const missing = wanted.filter((w) => !text.includes(w));
@@ -655,6 +746,7 @@ function main() {
   const res = checkDocs(docsDir, { map: flags.has('--map') });
   if (flags.has('--trace')) checkTrace(res);
   if (flags.has('--gates')) checkGates(res);
+  if (flags.has('--state')) checkState(res);
   if (freezeId) handleFreeze(res, freezeId);
 
   console.log(render(res, { map: flags.has('--map') }));

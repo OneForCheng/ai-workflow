@@ -97,6 +97,7 @@
 
 - `/flow` 自动判定状态；`/flow init` 初始化文档体系
 - 文档校验：`node .agents/skills/flow/scripts/flow-check.mjs docs`
+- 运行状态校验：`… docs --state`
 - 覆盖视图：`… --map`；AC 矩阵：`… --trace`；门契约：`… --gates`；自测：`--fixtures`
 - 质量命令：`<typecheck / format / lint / test 实际命令>`
 
@@ -147,16 +148,23 @@ gates:
 - `on_fail`：`fix`（修复后继续）/ `park`（停放并继续队列）
 - 项目不涉及的层直接删行，不留空层
 
-## 运行状态（P1 预留，不在 init 必建）
+## 运行状态（`.flow/`，首次 run 创建）
 
-P1 的无人值守执行会在项目根使用 `.flow/`：
+无人值守执行使用 `.flow/`，**默认与 `docs/` 同级**（工作区根）：
 
 - 与 `docs/` 分离：`docs/` 回答「是什么」，`.flow/` 回答「做到哪」
-- 定位优先级：`--flow-root` > `FLOW_ROOT` > 向上查找 > `git root` > cwd
-- 结论层（`state.json`、retro 记录）可入 git；证据层（`runs/`、`signals.jsonl`）默认本地
-- 父级不在 git 内时记 `tracked: false`，retro 须标注证据不足并降级结论
+- 定位优先级：`--flow-root` > `FLOW_ROOT` > `docs/` 同级 > 向上查找 > `git root` > cwd
+- 结论层（`state.json`、`retro/`）可入 git；证据层（`runs/`、`signals.jsonl`）默认本地
+- 父级不在 git 内时记 `tracked: false`，晨报与 retro 须标注证据不足
 
-init 阶段只告知约定，**不创建** `.flow/`。
+首次 `/flow run` 创建骨架，`.flow/.gitignore` 内容：
+
+```
+runs/
+signals.jsonl
+```
+
+init 阶段只约定位置，**不创建** `.flow/`。
 
 ## 注意
 
