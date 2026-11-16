@@ -115,6 +115,7 @@ npx skills update rdd -g
     reference/review.md
     reference/compound.md
     scripts/flow-check.mjs
+    scripts/fixtures/      # checker 自测样本（--fixtures）
 ```
 
 ## License

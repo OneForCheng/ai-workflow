@@ -19,9 +19,10 @@
       init.md                # 接入文档体系（脚手架 + 宪法模板）
       plan.md                # Plan 模式（需求确认 → 方案设计）
       go.md                  # Go 模式（实现 + 回填事实文档）
-      review.md              # 默认轻量 checklist（Review 计数 ≤3 可询问跳过，不含 docs/）
+      review.md              # 轻量 checklist（高风险路径强制；未命中且计数 ≤3 可询问跳过）
       compound.md            # 系统进化（含对话内 skill 草稿）
-    scripts/flow-check.mjs   # 可选的文档一致性校验
+    scripts/flow-check.mjs   # 可选的文档一致性校验（结构 / --map / --trace / --gates / --fixtures）
+    scripts/fixtures/        # checker 自测样本（当前 8 个，改脚本必跑）
 ```
 
 ## Skill 编写约定
@@ -39,14 +40,20 @@
 
 ```bash
 npx skills add . -l            # 列出可发现的 skill（不安装）
+# 若 npm 缓存属主异常报 EPERM：加 --cache /tmp/npm-cache
 npx skills add . -g -y         # 本地安装到全局（开发自测）
 npx skills update -g           # 更新已安装的全局 skill
-node .agents/skills/flow/scripts/flow-check.mjs <docsDir>   # /flow 校验 docs/
+node .agents/skills/flow/scripts/flow-check.mjs docs            # 结构校验
+node .agents/skills/flow/scripts/flow-check.mjs docs --trace    # AC↔Task 矩阵校验
+node .agents/skills/flow/scripts/flow-check.mjs docs --map      # 目录覆盖视图（anchors）
+node .agents/skills/flow/scripts/flow-check.mjs docs --gates    # 质量门契约校验
+node .agents/skills/flow/scripts/flow-check.mjs --fixtures      # checker 自测（全部通过）
 ```
 
 ## 约束
 
 - 本仓库无构建步骤、无脚本依赖：skill 内容必须是纯 Markdown 提示词；唯一的可选脚本是零依赖 Node ESM
+- `flow-check` 各子命令**只读**；修改 checker 后必须跑 `--fixtures`，保证全部样本仍按预期通过/失败
 - 不提交 `node_modules`、`.DS_Store`、编辑器私有配置（见 `.gitignore`）
 - 修改 skill 后需确认 `npx skills add . -l` 仍能正确发现，且 `reference/`、`scripts/` 随目录一并安装到目标项目
 
@@ -63,6 +70,8 @@ node .agents/skills/flow/scripts/flow-check.mjs <docsDir>   # /flow 校验 docs/
 | `docs/others` | 记录 | 默认**追加** |
 
 - 闭环：`Features → Plans → 代码/skill → Designs/Standards/Features → Review → Compound → 需求回溯`
-- 定位文档：先读该目录 `README.md` 索引，按 `scope` 只打开命中的 1–2 篇；禁止全量扫描 `docs/`
-- Review 默认 `checklist`；Review 计数 ≤ 3（排除 `docs/`）时询问是否跳过（仅明确不需要才 skip）；> 3 强制 checklist；结束前必须做需求回溯；Compound 有洞察才写
+- 定位文档：先读该目录 `README.md` 索引，按 `scope` / `anchors` 只打开命中的 1–2 篇；禁止全量扫描 `docs/`
+- `anchors`：design/standard 声明代码落点（项目根相对路径或 glob），`--map` 输出覆盖视图
+- `frozen`：Feature 全部 AC 完成时写需求块哈希，防止正文被就地改写
+- Review 默认 `checklist`；高风险路径命中即强制（清单见 flow/reference/review.md）；未命中且计数 ≤ 3（排除 `docs/`）时询问是否跳过（仅明确不需要才 skip）；> 3 强制；结束前必须做需求回溯；Compound 有洞察才写
 - 校验：`node .agents/skills/flow/scripts/flow-check.mjs`

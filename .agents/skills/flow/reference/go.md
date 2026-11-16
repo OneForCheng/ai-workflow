@@ -6,6 +6,13 @@
 
 ## 步骤
 
+### 0. 基线（实现前）
+
+- 读门契约 `docs/standards/quality-gates.md`；未定义时用 `AGENTS.md` 的质量命令
+- 跑一次 `fast` 门禁，把「通过 / 已知失败清单」写入 Plan §8「基线」
+- 工作区不干净时先确认改动范围，避免把既有改动算进本轮
+- 无 `fast` 档只能跑 `full` 时，记录耗时，作为「缺局部验证入口」的摩擦候选
+
 ### 1. 实现代码
 
 - 只改 Plan §3 声明的文件；需扩大范围时先说明并征得同意，事后再追加到 Plan 偏差段
@@ -15,10 +22,21 @@
   - 纯文档、配置、一次性脚本等 → 不强行补测试
 - 遇到未预见的技术限制或需求歧义 → 暂停并确认
 
-### 2. 质量检查
+### 2. 质量检查（基线 → 归因 → 修复或记账）
 
-按项目实际配置执行（命令来自 `AGENTS.md` / 构建配置）：类型检查 → format → lint → test。
-失败即修复重跑，不跳过、不静默忽略。
+优先读 `docs/standards/quality-gates.md`：本轮迭代跑 `fast`，收尾跑 `full`；无契约时按 `AGENTS.md` 命令。顺序：类型检查 → format → lint → test。
+
+1. **对比基线**（§0 已记录）：先判断失败是否由本轮引入
+2. **归因**（三类不得混为一谈）：
+
+   | 归因 | 判定依据 | 动作 |
+   |------|----------|------|
+   | 本轮引入 | 基线通过、现失败；或失败点与改动文件相关 | 修复，最多 3 次；仍失败则暂停确认 |
+   | 既有 / 无关 | 基线与现态同样失败 | 记「工程摩擦」+ waiver，继续 |
+   | 门禁本身错 | 基线就红、口径误伤（如单文件触发全仓覆盖率）、命令不可用 | waiver + 机检建议，交 Compound |
+
+3. **waiver 显式化**：跳过任一门禁必须写 `门禁 | 原因 | 复检时点`；无 waiver 的跳过视为未验证
+4. **禁止**为通过而关 coverage、删测试、放宽阈值；确需调整先征得用户同意
 
 **工程摩擦须记账（供 Compound）**：质量命令出现下列任一情况时，**不得只在对话里绕过**——须在 §8 `工程摩擦（候选 Compound）` 写清现象、绕过方式与期望改进（即使本轮业务代码已验收通过）：
 
@@ -56,6 +74,8 @@
 - `status` → `done`（部分完成则保持 `active` 并说明）
 - 勾选验收标准，补「验收结果」
 - 补全关联 Plans / Designs / 前置 Feature
+- **冻结**：完成时执行 `node .agents/skills/flow/scripts/flow-check.mjs docs --freeze FEAT-00x`，把返回的 `frozen: <hash>` 写入 front-matter；此后正文不得再改（`status` / 关联 / 验收结果除外）
+- 部分完成（仍 `active`）不写 `frozen`，待全部 AC 完成后再冻结
 
 **旧 Feature（仅 status 与关联可动，正文冻结）**：
 
@@ -81,7 +101,9 @@
 - 完成：T1–T4
 - 偏差：<与方案的差异及原因；无则写「无」>
 - 遗留：<未完成项 / 后续建议>
-- 验证：<执行的命令与结果>
+- 基线：<命令与结果 / 已知失败清单>
+- 门禁：<fast/full 命令与结果>
+- waiver：无 / <门禁 | 原因 | 复检时点>
 - 工程摩擦（候选 Compound）：无 / <现象 → 绕过 → 期望改进；可多条>
 - 本轮改动文件：
   - `path/a`
@@ -96,16 +118,19 @@
 
 - [ ] 索引与文件一致（无孤儿条目、无未登记文件）
 - [ ] Plan §6 的回填项全部完成
+- [ ] `node .agents/skills/flow/scripts/flow-check.mjs docs --trace` 通过（AC 全覆盖）
+- [ ] 本轮新增/变更的 design 的 `anchors` 命中真实文件；`--map` 无本轮新增模块「未覆盖」
 - [ ] 已确认的旧 Feature 正文未被改写（只有 `status` 与关联行变化）
+- [ ] 完成态 Feature 已写 `frozen`，且哈希匹配
 - [ ] `designs` / `standards` 中无历史、日期注释、理由残留
 - [ ] 未读历史 Plan 正文，未全量扫描 `docs/`
-- [ ] 可选：`node .agents/skills/flow/scripts/flow-check.mjs`
+- [ ] 可选：`node .agents/skills/flow/scripts/flow-check.mjs docs`
 
 ### 7. 移交 Review
 
 自检通过后：
 
-1. 对话简短确认：「Go 完成，进入 Review」；Review 计数 ≤ 3（排除 docs/）时由 `review.md` 询问是否跳过，否则直接 checklist
+1. 对话简短确认：「Go 完成，进入 Review」；先按 `review.md` 判定**高风险路径**（命中即强制 checklist），未命中再看 Review 计数（≤ 3 询问，> 3 强制）
 2. **加载 `reference/review.md`** 并执行
 3. **禁止**在此输出完整 G2 回溯表（G2 在 Compound 结束时输出，且**一律含需求回溯**）
 

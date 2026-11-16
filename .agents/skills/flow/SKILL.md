@@ -41,7 +41,7 @@ disable-model-invocation: true
 
 ```
 起点 Features(读) → [追加]Plans → 代码 + 必要测试 → [变更]Designs/Standards/Features
-                         → Review（默认 checklist） → Compound(有洞察才写) → G2 需求回溯
+                         → Review（默认 checklist；高风险路径强制） → Compound(有洞察才写) → G2 需求回溯
                                                                                                                   │
                                                               ┌──────── 下一轮从更新后的事实出发 ─────────────┘
 ```
@@ -54,12 +54,12 @@ disable-model-invocation: true
 |------|------|----------|
 | **G0** | Plan·P1 结束 | 需求理解已确认（若主张旧 Feature 有问题，须在此点明具体问题）；零待确认项且来源结构完整时可直接进 P2。此前禁止写 `docs/` 与改代码 |
 | **G1** | Plan·P2 结束 | 用户回复「确认方案，开始实现」；此前禁止任何代码改动 |
-| **G1.5** | Review | checklist 已输出；P1 须先修复或征得用户接受后再进 Compound。最终策略为 `skip`（用户明确不需要 Review）时本门禁直接通过 |
+| **G1.5** | Review | checklist 已输出；P1 须先修复或征得用户接受后再进 Compound。未命中高风险路径且用户明确不需要 Review 时，`skip` 直接通过 |
 | **G2** | Compound 结束 | 质量检查已通过 + 索引同步 + Compound 已处理（或声明无洞察）+ **需求回溯表已输出**（无论改动简繁，一律对照验收/需求确认符合性） |
 
 ## 小改动可询问跳过 Review
 
-Go 结束后按 **Review 计数**决定是否询问跳过（口径与判定见 `reference/review.md`）：
+Go 结束后**先看高风险路径**（清单见 `reference/review.md`）：命中即强制 checklist、不询问。未命中再按 **Review 计数**决定（口径与判定见 `reference/review.md`）：
 
 - **计数口径**：本轮改动文件中**排除** `docs/` 下全部文件（含各目录索引）后的数量
 - **Review 计数 > 3** → 直接执行 checklist（不问）
@@ -83,6 +83,7 @@ updated: 2026-01-14
 - 类型专属：`feature`/`design`/`standard`/`other` 另需 `updated`；`plan` 用 `created` 取代 `updated`，另需 `feature`；`design` 另需 `domain`
 - `status` 取值：feature `draft|active|done|deprecated`；plan `draft|active|done|abandoned`；design/standard `draft|current|deprecated`；other（ADR）`proposed|accepted|superseded|rejected`
 - ID 规则：`FEAT-<3位序号>`、`PLAN-<YYYYMMDD>-<slug>`（ID 即文件名）、`DES-<domain>-<subject>`、`STD-<topic>`、`ADR-<3位序号>`
+- 可选字段：`anchors`（design/standard，项目根相对路径或 glob，至少命中 1 个文件）、`frozen`（feature 完成时的需求块哈希，由 `--freeze` 打印）
 
 ## 读集契约（省 token 的硬约束）
 
@@ -107,7 +108,7 @@ updated: 2026-01-14
 **加载 `reference/plan.md`。** 要点：
 
 - **P1 需求确认（零写入，止于 G0）**：只读需求侧最小集 → 输出「需求理解 / 影响范围 / 待确认项」→ 有疑点则**停止**等待确认；零待确认项且来源结构完整时直接进入 P2
-- **P2 方案设计（止于 G1）**：补读 designs/standards 命中文件 + `plans/README.md` 查重 → 现状与 Gap → 多方案时先给对比、选定后再落档 → **默认新建 Feature** → 新建 Plan（含 **Review 策略**，默认 `checklist`）并追加索引 → 输出摘要后**停止**
+- **P2 方案设计（止于 G1）**：补读 designs/standards 命中文件（含 `anchors`）+ `plans/README.md` 查重 → 现状与 Gap → 多方案时先给对比、选定后再落档 → **默认新建 Feature** → Tasking 三件套（矩阵 / 卡片 / 遗漏清单）→ 新建 Plan（含 **Review 策略**，默认 `checklist`）并追加索引 → 输出摘要后**停止**
 
 ## Go 模式（实现 + 回填事实）
 
@@ -117,16 +118,16 @@ updated: 2026-01-14
 2. 执行项目质量命令，失败即修复重跑
 3. 回填 designs → standards（仅通用约定）→ features → others（按需）
 4. 同步索引；Plan 文末追加 `## 执行结果与偏差`（含 `工程摩擦（候选 Compound）` 与本轮改动文件列表）
-5. 自检；可选 `node .agents/skills/flow/scripts/flow-check.mjs`
+5. 自检；`node .agents/skills/flow/scripts/flow-check.mjs docs --trace`（矩阵）、`--map`（anchors 覆盖）、`--fixtures`（脚本自测）
 6. **不输出 G2** → 进入 Review
 
 ## Review 模式（默认 checklist·轻量）
 
-**加载 `reference/review.md`。** 先按 Review 计数判定，再执行或 skip：
+**加载 `reference/review.md`。** 先按风险、再按计数判定：
 
-1. 计算 Review 计数（排除 `docs/` 与索引）
-2. **计数 ≤ 3** → **先询问**是否跳过；仅用户明确表示不需要 Review 才 `skip`，否则 checklist
-3. **计数 > 3** → 直接 checklist，不询问
+1. **命中高风险路径**（清单见 `reference/review.md`）→ 直接 checklist，不询问
+2. 未命中 → 计算 Review 计数（排除 `docs/` 与索引）
+3. **计数 > 3** → 直接 checklist；**计数 ≤ 3** → 先询问，仅明确不需要才 `skip`
 4. 执行 checklist 时：固定 ≤4 条视角单轮输出；P1 须处理后再进 Compound
 5. Plan §7 可写 `checklist`/`skip`，但**仅表达意图**，最终以本条 1–3 为准（详见 `reference/review.md`）
 
@@ -149,7 +150,7 @@ updated: 2026-01-14
 3. **事实归属唯一**：表结构→`designs/db`，接口→`designs/api`，通用约定→`standards`，决策理由→`others/adr`
 4. **代码与测试是最终事实**：与 Designs 不一致时，以代码为准并立即回填 Designs
 5. **最小变更**：只改 Plan 声明的范围；扩大范围先征得同意并追加到偏差段
-6. **Review 默认 checklist、Compound 禁止空转**：仅 Review 计数 ≤ 3 且用户明确不需要时才可 skip；无洞察时不得为凑流程改 `docs/` 或 `AGENTS.md`；**但** Go 已记账的工程摩擦 / 验证绕过 **必须**进入 Compound（至少 Plan「流程改进」，常建议 AGENTS 补丁）——只写流程改进不算空转，也不得写成「无系统级沉淀」
+6. **Review 默认 checklist、Compound 禁止空转**：高风险路径命中即强制 checklist；仅未命中且计数 ≤ 3、用户明确不需要时才可 skip；无洞察时不得为凑流程改 `docs/` 或 `AGENTS.md`；**但** Go 已记账的工程摩擦 / 验证绕过 **必须**进入 Compound（至少 Plan「流程改进」，常建议 AGENTS 补丁）——只写流程改进不算空转，也不得写成「无系统级沉淀」
 7. **Skill / 机检建议不落库（默认可）**：skill 草稿与测试/lint 机检建议默认只出现在对话（及 Plan「流程改进」）；写入仓库或安装 skill 须用户明确同意
 8. **需求回溯不可跳过**：G2 必须输出对照验收/需求的回溯表
 9. 语言与用户一致；本工作流产出的 docs 是正式产物，但不额外生成总结/报告类文件（回溯表在对话输出即可）

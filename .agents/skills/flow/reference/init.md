@@ -9,6 +9,7 @@
 2. **输出摘要**（5 行内）：技术栈、文档现状、将创建的文件清单；等待用户确认
 3. **创建目录与索引**：`docs/{features,plans,designs,standards,others}/README.md`（模板见下）
 4. **写入根 `AGENTS.md`**：按下方宪法模板，项目信息按实填写，**≤ 90 行**（含 Review/Compound 一句说明）
+4.5 **生成质量门契约（可选）**：按探测到的质量命令写 `docs/standards/quality-gates.md`（模板见下）；项目无任何检查命令则跳过，不编造
 5. **存量迁移（如有）**：只输出「现有文档 → 建议目录」的对照表，由用户决定是否迁移；不自动移动
 6. **自检**：`node .agents/skills/flow/scripts/flow-check.mjs`
 
@@ -73,6 +74,8 @@
 - **禁止**：全量扫描或 grep `docs/`；读取已归档 `plans/` 正文；在 `designs`/`standards` 写变更历史或日期注释
 - Review / Compound：只读当前 Plan、本轮改动文件清单与 §6 已回填文件，禁止为找灵感扫库
 - 每篇文档必须有 front-matter：`id / title / doc_type / status / scope / updated`（plan 用 `created` + `feature`）
+- design / standard 可用 `anchors` 声明代码落点（项目根相对路径或 glob，至少命中 1 个文件）；覆盖视图：`--map`
+- Feature 完成时写 `frozen`（需求块哈希），防止正文被就地改写；`--freeze FEAT-00x` 可打印哈希
 
 ## 事实归属
 
@@ -84,10 +87,17 @@
 | 通用约定（命名/建表/安全） | `docs/standards/*.md` |
 | 决策理由、被否方案 | `docs/others/adr/*.md`（追加） |
 
+## 质量门
+
+- 契约：`docs/standards/quality-gates.md`（`fast` 用于迭代，`full` 用于收尾与 CI）
+- 失败先归因：本轮引入 → 修；既有无关 → waiver；门禁本身错 → 改门禁
+- 无契约时按项目既有质量命令执行，并在首次 Go 时补契约
+
 ## 命令
 
 - `/flow` 自动判定状态；`/flow init` 初始化文档体系
-- 文档校验：`node .agents/skills/flow/scripts/flow-check.mjs`
+- 文档校验：`node .agents/skills/flow/scripts/flow-check.mjs docs`
+- 覆盖视图：`… --map`；AC 矩阵：`… --trace`；门契约：`… --gates`；自测：`--fixtures`
 - 质量命令：`<typecheck / format / lint / test 实际命令>`
 
 ## 按需加载
@@ -96,8 +106,62 @@
 - 高阶方案评审：`/hld`；轻量实现：`/do` / `/rdd`；项目上下文：`/init`
 ```
 
+## 质量门契约模板（`docs/standards/quality-gates.md`）
+
+````markdown
+---
+id: STD-quality-gates
+title: 质量门契约
+doc_type: standard
+status: current
+scope: [quality]
+updated: <YYYY-MM-DD>
+---
+
+# 质量门契约
+
+## 分层
+
+| 层 | 含义 | 典型命令 |
+|----|------|----------|
+| term | 业务术语 | 术语表比对 / 人工 |
+| req | 需求 | AC 可验证性检查 |
+| code | 代码 | typecheck / lint / test |
+| arch | 架构 | 分层与依赖规则（如 archunit） |
+| func | 功能 | E2E / 浏览器验证 |
+| doc | 文档 | flow-check |
+
+## gates
+
+```yaml
+gates:
+  - id: code-type
+    layer: code
+    fast: <局部类型检查命令>
+    full: <全量类型检查命令>
+    on_fail: fix
+```
+````
+
+- `full` 必填；`fast` 可为 `none`（表示缺局部入口，会被记为工程摩擦候选）
+- `on_fail`：`fix`（修复后继续）/ `park`（停放并继续队列）
+- 项目不涉及的层直接删行，不留空层
+
+## 运行状态（P1 预留，不在 init 必建）
+
+P1 的无人值守执行会在项目根使用 `.flow/`：
+
+- 与 `docs/` 分离：`docs/` 回答「是什么」，`.flow/` 回答「做到哪」
+- 定位优先级：`--flow-root` > `FLOW_ROOT` > 向上查找 > `git root` > cwd
+- 结论层（`state.json`、retro 记录）可入 git；证据层（`runs/`、`signals.jsonl`）默认本地
+- 父级不在 git 内时记 `tracked: false`，retro 须标注证据不足并降级结论
+
+init 阶段只告知约定，**不创建** `.flow/`。
+
 ## 注意
 
 - 宪法中的路径、命令必须来自实际项目，不得编造
 - 项目不具备的维度（如无 DB）直接省略对应行，不留空章节
 - 若项目已有 `AGENTS.md`：只**追加/建议**，不整体重写；改动前取得用户同意
+- `anchors` 必须是项目根相对路径且命中真实文件，禁止绝对路径与 `..`
+- `frozen` 只在 Feature 全部 AC 完成时写入；部分完成不冻结

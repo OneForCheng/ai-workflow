@@ -6,9 +6,25 @@
 
 ## 策略判定
 
-1. 读取当前 Plan 的 **§7 Review 策略**（未声明视同 `checklist`）。**§7 仅记录期望意图，不单独决定最终是否 skip**——最终分支只看下方「Review 计数」与用户是否明确拒绝
-2. 取 Plan §8「本轮改动文件」（或本轮已知编辑集），按**计数口径**得到 **Review 计数**
-3. 按下方表决定最终行为：
+按下列顺序判定：**先风险、后数量**。
+
+1. **风险触发**：本轮改动命中下表任一路径/关键词 → 直接 checklist；不询问，不受 Review 计数与 Plan §7 `skip` 影响
+2. **数量兜底**：未命中风险时，读 Plan §7（仅意图）+ 计算 Review 计数
+3. **计数 > 3** → 直接 checklist（不问；忽略 §7 的 `skip`）
+4. **计数 ≤ 3** → 停止并询问；仅用户**明确表示不需要 Review** 才 `skip`
+
+### 高风险路径（任一命中即强制 checklist）
+
+| 类别 | 命中信号（路径 / 关键词） |
+|------|---------------------------|
+| 鉴权与权限 | `auth` `acl` `permission` `rbac` `tenant` `session` `token` `登录` |
+| 资金与交易 | `payment` `billing` `refund` `order` `invoice` `金额` `对账` |
+| 数据与迁移 | `migration` `schema` `sql` `prisma` `alembic` `数据修复` |
+| 对外契约 | `api/` `openapi` `proto` `public` `sdk` `兼容` |
+| 配置与密钥 | `env` `secret` `config` `deploy` `ci` `workflow` |
+| 并发与一致性 | `lock` `queue` `retry` `idempot` `transaction` `事务` `幂等` |
+
+> 这是**默认集**：项目可在 `docs/standards/quality-gates.md` 或 `AGENTS.md` 追加信号，但不得删减默认项。
 
 ### Review 计数口径
 
@@ -18,17 +34,18 @@
 
 ### 判定表
 
-| Review 计数 | 行为 |
-|-------------|------|
-| **> 3** | 直接执行下方 checklist → 通过 **G1.5** 后再进 Compound（不问；忽略 Plan §7 的 `skip`） |
-| **≤ 3** | **停止并询问**（见下）；仅当用户**明确表示不需要 Review** 才 `skip`，否则执行 checklist |
+| 情况 | 行为 |
+|------|------|
+| 命中高风险路径 | 强制 checklist（不问，忽略 §7 的 `skip`） |
+| 未命中且计数 **> 3** | 强制 checklist（不问） |
+| 未命中且计数 **≤ 3** | **停止并询问**（见下）；仅明确表示不需要才 `skip` |
 
-因此：即使 §7 写 `checklist`，计数 ≤ 3 仍询问（opt-out）；即使 §7 写 `skip`，计数 > 3 仍强制 checklist。
+> 文件数只决定「要不要问」，不决定「要不要审」——3 个文件也可能改到支付与鉴权。
 
 ### 小改动时的询问（Review 计数 ≤ 3）
 
 ```
-Go 已完成。本轮 Review 计数 ≤ 3（已排除 docs/ 与索引）。
+Go 已完成。本轮未命中高风险路径，且 Review 计数 ≤ 3（已排除 docs/ 与索引）。
 
 是否跳过 Review？
 - 回复「跳过 Review」/「不需要 Review」：直接进入 Compound（仍须在收尾做需求回溯）
@@ -91,10 +108,10 @@ Go 已完成。本轮 Review 计数 ≤ 3（已排除 docs/ 与索引）。
 - P2：无 / <留作后续>
 ```
 
-`skip`（仅用户明确不需要 Review）时追加：
+`skip`（未命中高风险路径且用户明确不需要 Review）时追加：
 
 ```markdown
 ## Review 结果
 - 策略：skip
-- 说明：Review 计数 ≤ 3 且用户明确不需要 Review
+- 说明：未命中高风险路径，Review 计数 ≤ 3，且用户明确不需要 Review
 ```
