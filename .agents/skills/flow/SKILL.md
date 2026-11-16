@@ -21,6 +21,7 @@ disable-model-invocation: true
 | `/hld` | 上游：高阶方案评审，不改代码 |
 | **`/flow`** | **文档驱动闭环**：Plan → Go → Review → Compound → 需求回溯 |
 | **`/flow run`** | **无人值守执行**：已批准的 Plan 在授权信封内跑完（见 `reference/run.md`） |
+| **`/flow quick`** | **小改动最小闭环**：复用 Feature、一次确认、3 轮内完成（见 `reference/quick.md`） |
 | `/rdd` `/do` | 轻量实现流：不维护 `docs/` 体系 |
 | `/init` | 生成项目 AI 上下文（`AGENTS.md` 等）；可配合 `/flow` 的 docs/standards |
 
@@ -94,6 +95,7 @@ updated: 2026-01-14
 | Plan·P2 方案设计 | P1 已读内容 + `designs/README.md`/`standards/README.md` 命中的 0–3 篇正文、`plans/README.md` | 读历史 Plan 正文；读无关 Feature/Design |
 | Go | 当前 Plan、Plan 声明的改动文件、待回填的 Design/Standard/Feature | 重新通读全量 `docs/` |
 | run | 当前 Plan、账本（`.flow/runs/`）、信封、门禁基线 | 读历史 Plan；改需求；执行 Review / Compound |
+| quick | 目标 Feature（≤2 篇）、相关文件、现有 Plan | grep / 全量扫描 features；读历史 Plan；改 Feature 正文 |
 | Review | 当前 Plan、本轮改动文件清单（或 git diff 范围）、已回填的 §6 文件（仅当 checklist 需要核对契约时） | 重扫 `docs/`；读历史 Plan；启动多 agent |
 | Compound | 当前 Plan（含偏差段）、Review 结论（若有）、本轮已改动的事实文档路径列表 | 为「找灵感」全量扫描 `docs/` 或代码库 |
 
@@ -101,6 +103,7 @@ updated: 2026-01-14
 
 ## 阶段 0：状态判定（`/flow` 无参数）
 
+0. 用户显式 `/flow quick`（或明确要求「小改快速走流程」）→ 加载 `reference/quick.md`，按其判定与一次确认执行
 1. 无 `docs/` 或五目录/索引不全 → 进入 **init**，加载 `reference/init.md`
 2. 存在 `.flow/state.json` → 按 `status` 分支：
    - `running` → 问续跑 / 放弃（放弃置 `paused`）；续跑加载 `reference/run.md`

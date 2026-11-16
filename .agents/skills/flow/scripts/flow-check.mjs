@@ -310,6 +310,9 @@ function checkDocs(docsDir, opts = {}) {
     if (data.status && !STATUSES[type].includes(data.status)) {
       err(res, `status=${data.status} 非法（${type} 允许 ${STATUSES[type].join('/')}）：${shown(res, rDocs)}`);
     }
+    if (type === 'plan' && data.tier !== undefined && !['standard', 'quick'].includes(data.tier)) {
+      err(res, `tier=${data.tier} 非法（允许 standard/quick）：${shown(res, rDocs)}`);
+    }
     if (data.id) {
       if (!ID_RE[type].test(data.id)) err(res, `ID 格式不符：${data.id}（${shown(res, rDocs)}）`);
       if (idMap.has(data.id)) err(res, `ID 重复：${data.id}（${shown(res, idMap.get(data.id))} 与 ${shown(res, rDocs)}）`);
@@ -465,8 +468,12 @@ function checkTrace(res) {
     const feat = featureById.get(plan.data.feature);
     if (!feat) continue;
     const acs = [...new Set(feat.body.match(/\bAC-\d+\b/g) || [])];
+    const isQuick = plan.data.tier === 'quick';
     const covers = Array.isArray(plan.data.covers) ? plan.data.covers.map(String) : null;
-    const targets = covers || acs;
+    if (covers && covers.length === 0 && !isQuick) {
+      err(res, `covers 不能为空数组（无 AC 覆盖请省略该字段）：${shown(res, plan.rDocs)}`);
+    }
+    const targets = isQuick ? covers || [] : covers || acs;
     if (covers) {
       for (const ac of covers) {
         if (!acs.includes(ac)) err(res, `covers 引用了 Feature 中不存在的 AC：${ac}（${shown(res, plan.rDocs)}）`);
@@ -474,7 +481,7 @@ function checkTrace(res) {
     }
     const matrix = findMatrix(plan.body);
     if (!matrix) {
-      warn(res, `缺少 AC↔Task 矩阵（--trace 跳过）：${shown(res, plan.rDocs)}`);
+      if (!isQuick) warn(res, `缺少 AC↔Task 矩阵（--trace 跳过）：${shown(res, plan.rDocs)}`);
       continue;
     }
     const rows = new Map();

@@ -1,0 +1,3 @@
+exit: 1
+flags: trace
+covers 不能为空数组

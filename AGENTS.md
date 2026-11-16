@@ -14,13 +14,14 @@
   hld/SKILL.md + route.md + reference.md  # 高阶方案评审文档
   init/SKILL.md + route.md   # 生成项目上下文规则（AGENTS.md 等）
   flow/
-    SKILL.md + route.md      # 文档驱动闭环（Plan / Go / Review / Compound）
+    SKILL.md + route.md      # 文档驱动闭环（Plan / Go / Review / Compound；quick / run 子模式）
     reference/
       init.md                # 接入文档体系（脚手架 + 宪法模板）
       plan.md                # Plan 模式（需求确认 → 方案设计）
       go.md                  # Go 模式（实现 + 回填事实文档）
       review.md              # 轻量 checklist（高风险路径强制；未命中且计数 ≤3 可询问跳过）
       run.md                 # 无人值守执行（信封 / 决策窗口 / 账本 / park / 晨报 / dry-run）
+      quick.md               # 小改动最小闭环（复用 Feature / 一次确认 / 3 轮）
       compound.md            # 系统进化（含对话内 skill 草稿）
     scripts/flow-check.mjs   # 可选的文档一致性校验（结构 / --map / --trace / --gates / --fixtures）
     scripts/fixtures/        # checker 自测样本（改脚本必跑）

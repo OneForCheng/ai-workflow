@@ -64,7 +64,8 @@
 
 `Features → Plans(追加) → 代码 → Designs/Standards/Features(回填) → Review（默认 checklist） → Compound(系统进化) → 需求回溯 → 下一轮`
 
-- Review 默认 `checklist`；Review 计数 ≤ 3（排除 `docs/` 与索引）时询问是否跳过（仅明确不需要才 skip）；> 3 强制 checklist
+- 小改可用 `/flow quick`（复用 Feature、一次确认）；无人值守可用 `/flow run`（需 `approved`）
+- Review 默认 `checklist`；高风险路径强制；未命中且计数 ≤ 3 时询问是否跳过（仅明确不需要才 skip）；> 3 强制
 - 无论简繁，结束前必须做需求回溯（对照验收确认改动符合需求）
 - Compound：有洞察才写（先资格门再五问）；机检建议 / skill 草稿只出在对话，写入或安装须用户同意
 

@@ -164,6 +164,45 @@
 
 ---
 
+## quick 变体（`tier: quick`）
+
+- 入口 `/flow quick`，判定与护栏见 `reference/quick.md`
+- 复用现有 Feature，不新建（无归属才建最小 Feature）；不改其正文
+- **不要求覆盖矩阵**；`covers` 可省略或为空
+- G0 + G1 合并为一次确认；确认后写一页 Plan 并实现
+- Review 与 standard 一致：默认 checklist
+
+```markdown
+---
+id: PLAN-20260114-fix-copy
+title: 退款列表空状态文案
+doc_type: plan
+status: draft
+feature: FEAT-003
+tier: quick
+scope: [refund]
+created: 2026-01-14
+approved: 2026-01-14
+---
+
+# PLAN-20260114-fix-copy
+
+## 1. 需求
+一句话。
+
+## 2. 改动
+- 修改：`src/refund/List.tsx:88` — 空状态文案
+
+## 3. 验证
+- `pnpm test refund`
+
+## 4. 回填
+- designs：无 ｜ features：无（复用 FEAT-003，不改正文）
+
+## 5. 风险
+- 无
+```
+
 ## Plan 文件骨架
 
 ```markdown
@@ -173,6 +212,7 @@ title: 订单退款实现方案
 doc_type: plan
 status: draft
 feature: FEAT-001
+tier: standard            # standard | quick（quick 变体见 reference/quick.md）
 approved: 2026-01-14      # G1 通过后写入；run 模式的放行条件
 covers: [AC-1, AC-2]      # 本轮负责的 AC；缺省=Feature 全部
 scope: [order, payment]
