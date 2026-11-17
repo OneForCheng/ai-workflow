@@ -135,6 +135,7 @@ run 不等于「夜间跑」：它指**在授权信封内、不逐步等确认�
 
 - `status`：`idle | running | paused | done`
 - `next`：`none | review | compound | plan`
+- `lastDryRun`：最近一次 dry-run 的账本 id（可选；不影响状态分支）
 
 run 账本 front-matter：`run` / `plan` / `status` / `approved` / `auth` / `window` / `budget` / `branch`。
 正文：任务表（`任务 | 状态 | 门禁 | 证据`）、决策表、park 明细、预算使用。
@@ -184,6 +185,7 @@ run 结束**不输出 G2**；Review → Compound → G2 由 `/flow` 继续（见
 用途：在**零写入**前提下验证 Plan 是否可执行。最佳时机是 **G1 之前**（Plan 仍是 draft），这样发现的任务缺口能直接回 P2 修，不触发「Plan 已冻结」。
 
 - 语义：`mode: dry`；允许 `approved` 为空
+- **不写运行状态**：不改 `state.status` / `next` / `currentRun`；只写 `state.lastDryRun` 与 `runs/RUN-DRY-*.md`。dry-run 不属于 run 生命周期，`/flow` 不应因它分支
 - pre-flight 放宽第 1、3 项：Plan 可为 `draft`；工作区可脏（提示即可，不阻断）
 - 不建分支、不改代码、不 commit、不跑会写盘的命令；只读检查（类型检查 / 静态分析）可跑
 - 每任务产出：
@@ -193,6 +195,7 @@ run 结束**不输出 G2**；Review → Compound → G2 由 `/flow` 继续（见
   - **预估**：改动文件数、验证命令、token / 时长量级
   - **状态**：`analyzed` / `dry-parked`
 - 产出：可行性报告（对话）+ 账本 + 晨报；账本 front-matter 写 `mode: dry`
-- `next`：有缺口 → `plan`（回 P2 改 Plan）；无缺口 → `review`（可以进 G1）
+- 账本 `next: plan`（有缺口回 P2；无缺口可进 G1）；该字段只供人读，不驱动 `/flow`
+- 结束后 `state.lastDryRun = RUN-…`，`status` / `next` 保持原值
 
 不验证：真实改动、门禁失败归因、commit、续跑。dry-run 通过 ≠ 实现可行，只代表「任务描述足以开工」。

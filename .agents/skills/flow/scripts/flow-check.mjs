@@ -60,7 +60,7 @@ const ID_RE = {
   plan: /^PLAN-\d{8}-[a-z0-9-]+(-\d+)?$/,
   design: /^DES-[a-z0-9-]+$/,
   standard: /^STD-[a-z0-9-]+$/,
-  other: /^[A-Z]{2,4}-[A-Za-z0-9.-]+$/,
+  other: /^[A-Z]{2,8}-[A-Za-z0-9.-]+$/,
 };
 
 const FILE_RE = {
@@ -570,6 +570,32 @@ function hasTaskTable(body) {
 }
 
 /** 校验 <root>/.flow：state.json、当前账本、signals.jsonl */
+function validateLedger(res, dir, runId, expectMode) {
+  const runPath = join(dir, 'runs', `${runId}.md`);
+  if (!existsSync(runPath)) {
+    err(res, `缺少账本：.flow/runs/${runId}.md`);
+    return;
+  }
+  const { data, body } = parseFrontMatter(readFileSync(runPath, 'utf8'));
+  if (!data) {
+    err(res, `账本缺少 front-matter：.flow/runs/${runId}.md`);
+    return;
+  }
+  if (data.mode !== undefined && !['run', 'dry'].includes(String(data.mode))) {
+    err(res, `账本 mode 非法：${data.mode}（允许 run/dry）`);
+  }
+  if (expectMode && String(data.mode || '') !== expectMode) {
+    err(res, `账本 mode 应为 ${expectMode}：.flow/runs/${runId}.md`);
+  }
+  if (!data.run) err(res, '账本缺少 run');
+  if (!data.plan) err(res, '账本缺少 plan');
+  else {
+    const planIds = new Set(res.docs.filter((d) => d.type === 'plan').map((d) => d.data.id));
+    if (!planIds.has(String(data.plan))) err(res, `账本引用了不存在的 Plan：${data.plan}`);
+  }
+  if (!hasTaskTable(body)) err(res, '账本缺少任务表（表头需含「任务」「状态」）');
+}
+
 function checkState(res) {
   const dir = join(res.root, '.flow');
   if (!existsSync(dir)) {
@@ -591,9 +617,6 @@ function checkState(res) {
   if (typeof state.schema !== 'number') err(res, 'state.schema 必须是数字');
   if (!FLOW_STATUS.includes(state.status)) err(res, `state.status 非法：${state.status}`);
   if (!FLOW_NEXT.includes(state.next)) err(res, `state.next 非法：${state.next}`);
-  if (state.mode !== undefined && !['run', 'dry'].includes(state.mode)) {
-    err(res, `state.mode 非法：${state.mode}（允许 run/dry）`);
-  }
   if (!state.root || !['repo', 'workspace'].includes(state.root.mode)) {
     err(res, `state.root.mode 非法：${state.root && state.root.mode}`);
   }
@@ -602,29 +625,11 @@ function checkState(res) {
   if (!state.updated) err(res, 'state.updated 缺失');
   if (state.status === 'running') {
     if (!state.currentRun) err(res, 'state.status=running 时 currentRun 必填');
-    else if (!existsSync(join(dir, 'runs', `${state.currentRun}.md`))) {
-      err(res, `缺少账本：.flow/runs/${state.currentRun}.md`);
-    }
+    else validateLedger(res, dir, state.currentRun, 'run');
+  } else if (state.currentRun) {
+    validateLedger(res, dir, state.currentRun, null);
   }
-  if (state.currentRun) {
-    const runPath = join(dir, 'runs', `${state.currentRun}.md`);
-    if (existsSync(runPath)) {
-      const { data, body } = parseFrontMatter(readFileSync(runPath, 'utf8'));
-      if (!data) err(res, `账本缺少 front-matter：.flow/runs/${state.currentRun}.md`);
-      else {
-        if (data.mode !== undefined && !['run', 'dry'].includes(String(data.mode))) {
-          err(res, `账本 mode 非法：${data.mode}（允许 run/dry）`);
-        }
-        if (!data.run) err(res, '账本缺少 run');
-        if (!data.plan) err(res, '账本缺少 plan');
-        else {
-          const planIds = new Set(res.docs.filter((d) => d.type === 'plan').map((d) => d.data.id));
-          if (!planIds.has(String(data.plan))) err(res, `账本引用了不存在的 Plan：${data.plan}`);
-        }
-        if (!hasTaskTable(body)) err(res, '账本缺少任务表（表头需含「任务」「状态」）');
-      }
-    }
-  }
+  if (state.lastDryRun) validateLedger(res, dir, state.lastDryRun, 'dry');
   const sig = join(dir, 'signals.jsonl');
   if (existsSync(sig)) {
     readFileSync(sig, 'utf8').split('\n').forEach((line, i) => {
@@ -638,6 +643,167 @@ function checkState(res) {
       }
     });
   }
+}
+
+function sectionOf(body, title) {
+  const idx = body.indexOf(`## ${title}`);
+  if (idx < 0) return '';
+  const rest = body.slice(idx + title.length + 3);
+  const next = rest.indexOf('\n## ');
+  return next < 0 ? rest : rest.slice(0, next);
+}
+
+function fieldAfter(body, prefix) {
+  const lines = body.split('\n');
+  const i = lines.findIndex((l) => l.trim().startsWith(`- ${prefix}`));
+  if (i < 0) return '';
+  const first = lines[i].trim().slice(prefix.length + 3).replace(/^[：:]\s*/, '').trim();
+  const vals = first ? [first] : [];
+  for (let j = i + 1; j < lines.length; j++) {
+    const raw = lines[j];
+    const t = raw.trim();
+    if (!t) continue;
+    if (/^- /.test(raw)) break; // 下一个顶层字段
+    vals.push(t);
+  }
+  return vals.join(' ');
+}
+
+function reviewCounts(body) {
+  const sec = sectionOf(body, 'Review 结果');
+  let p1 = 0;
+  let p2 = 0;
+  for (const line of sec.split('\n')) {
+    const m = line.match(/^- (P[12])：\s*(.*)$/);
+    if (!m) continue;
+    const v = m[2].trim();
+    if (v && !/^无/.test(v)) {
+      if (m[1] === 'P1') p1++;
+      else p2++;
+    }
+  }
+  return { p1, p2 };
+}
+
+function signalsOf(res) {
+  const plans = res.docs.filter((d) => d.type === 'plan');
+  const tiers = { standard: 0, quick: 0 };
+  for (const p of plans) tiers[p.data.tier === 'quick' ? 'quick' : 'standard']++;
+
+  const retros = res.docs
+    .filter((d) => d.type === 'other' && /(^|\/)retro\//.test(d.rDocs))
+    .sort((a, b) => a.base.localeCompare(b.base));
+  const dateOf = (d) => {
+    const m = d.base.match(/(\d{8})/);
+    return m ? m[1] : String(d.data.updated || '').replace(/-/g, '');
+  };
+  const lastRetroDate = retros.length ? dateOf(retros[retros.length - 1]) : '';
+  const windowPlans = plans.filter((p) => {
+    const c = String(p.data.created || '').replace(/-/g, '');
+    return !lastRetroDate || c > lastRetroDate;
+  });
+  const rounds = windowPlans.length;
+
+  let p1 = 0;
+  let p2 = 0;
+  let friction = 0;
+  let waiver = 0;
+  let checklist = 0;
+  let skip = 0;
+  for (const p of windowPlans) {
+    const strat = (p.body.match(/^review:\s*(\w+)/m) || [])[1] || 'checklist';
+    if (strat === 'skip') skip++;
+    else checklist++;
+    const rc = reviewCounts(p.body);
+    p1 += rc.p1;
+    p2 += rc.p2;
+    const fr = fieldAfter(p.body, '工程摩擦（候选 Compound）');
+    if (fr && !/^无/.test(fr)) friction++;
+    const wv = fieldAfter(p.body, 'waiver');
+    if (wv && !/^无/.test(wv)) waiver++;
+  }
+
+  let open = 0;
+  for (const r of retros) {
+    for (const t of parseTables(r.body)) {
+      if (!t.length) continue;
+      const head = t[0].map((c) => c.toLowerCase());
+      const si = head.findIndex((c) => c.includes('状态'));
+      const ii = head.findIndex((c) => c.includes('实验') || c === 'id');
+      if (si < 0 || ii < 0) continue;
+      for (const row of t.slice(1)) {
+        if (row[si] && /open|观察|待观察|running/i.test(row[si])) open++;
+      }
+    }
+  }
+
+  let runs = 0;
+  let parked = 0;
+  let decisions = 0;
+  const flowDir = join(res.root, '.flow');
+  const hasFlow = existsSync(join(flowDir, 'state.json'));
+  if (hasFlow) {
+    const runsDir = join(flowDir, 'runs');
+    if (existsSync(runsDir)) {
+      const runFiles = readdirSync(runsDir).filter((f) => f.endsWith('.md'));
+      runs = runFiles.length;
+      for (const f of runFiles) {
+        const body = readFileSync(join(runsDir, f), 'utf8');
+        for (const t of parseTables(body)) {
+          if (!t.length) continue;
+          const head = t[0].map((c) => c.toLowerCase());
+          const si = head.findIndex((c) => c.includes('状态'));
+          if (si < 0 || !head.some((c) => c.includes('任务'))) continue;
+          for (const row of t.slice(1)) {
+            if (row[si] && /park/i.test(row[si])) parked++;
+          }
+        }
+      }
+    }
+    const sigPath = join(flowDir, 'signals.jsonl');
+    if (existsSync(sigPath)) {
+      for (const line of readFileSync(sigPath, 'utf8').split('\n')) {
+        const l = line.trim();
+        if (!l) continue;
+        try {
+          const ev = JSON.parse(l);
+          if (ev.event === 'task_parked') parked++;
+          if (ev.event === 'decision_auto') decisions++;
+        } catch {
+          /* --state 会报错 */
+        }
+      }
+    }
+  }
+
+  const reasons = [];
+  if (rounds >= 5) reasons.push('轮次≥5');
+  if (p1 >= 3) reasons.push('P1≥3');
+  if (friction >= 3) reasons.push('摩擦≥3');
+  if (parked >= 3) reasons.push('park≥3');
+  return {
+    plans: plans.length, tiers, rounds, p1, p2, friction, waiver, checklist, skip,
+    open, runs, parked, decisions, hasFlow, lastRetroDate, due: reasons.length > 0, reasons,
+  };
+}
+
+function renderSignals(sig) {
+  const source = sig.hasFlow ? `docs + .flow（${sig.runs} 个账本）` : 'docs（降级：无 .flow）';
+  return [
+    '## 信号摘要（--signals）',
+    `- 数据源：${source}`,
+    `- 轮次：共 ${sig.plans} 个 Plan（standard ${sig.tiers.standard} / quick ${sig.tiers.quick}），自上次 retro ${sig.rounds}${sig.lastRetroDate ? `（上次 ${sig.lastRetroDate}）` : ''}`,
+    `- Review（窗口内）：checklist ${sig.checklist} / skip ${sig.skip}；P1 ${sig.p1} / P2 ${sig.p2}`,
+    `- 工程摩擦（窗口内）：${sig.friction} 个 Plan 有记账；waiver：${sig.waiver}`,
+    `- 运行：parked ${sig.parked} / decision_auto ${sig.decisions}`,
+    `- 未结实验：${sig.open}`,
+    `- 触发：due: ${sig.due ? 'yes' : 'no'}${sig.due ? `（${sig.reasons.join('、')}）` : ''}`,
+    '- 规则：轮次≥5 或 P1≥3 或 摩擦≥3 或 park≥3',
+  ].join('\n');
+}
+
+function renderBrief(sig) {
+  return `due: ${sig.due ? 'yes' : 'no'} | rounds=${sig.rounds} | p1=${sig.p1} | friction=${sig.friction} | parks=${sig.parked} | source=${sig.hasFlow ? 'flow+docs' : 'docs'}`;
 }
 
 function buildMap(res) {
@@ -724,7 +890,8 @@ function runFixtures() {
     if (flags.has('trace')) checkTrace(res);
     if (flags.has('gates')) checkGates(res);
     if (flags.has('state')) checkState(res);
-    const text = render(res, {});
+    let text = render(res, {});
+    if (flags.has('signals')) text += '\n' + renderSignals(signalsOf(res));
     const code = res.errors.length ? 1 : 0;
     const missing = wanted.filter((w) => !text.includes(w));
     const ok = code === wantExit && missing.length === 0;
@@ -754,9 +921,11 @@ function main() {
   if (flags.has('--trace')) checkTrace(res);
   if (flags.has('--gates')) checkGates(res);
   if (flags.has('--state')) checkState(res);
+  const sig = flags.has('--signals') || flags.has('--brief') ? signalsOf(res) : null;
   if (freezeId) handleFreeze(res, freezeId);
 
   console.log(render(res, { map: flags.has('--map') }));
+  if (sig) console.log(flags.has('--brief') ? renderBrief(sig) : renderSignals(sig));
   if (res.errors.length) process.exitCode = 1;
 }
 

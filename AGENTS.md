@@ -13,6 +13,7 @@
   do/SKILL.md + route.md     # 轻量实现：分析 → 确认 → 实现 → 回溯
   hld/SKILL.md + route.md + reference.md  # 高阶方案评审文档
   init/SKILL.md + route.md   # 生成项目上下文规则（AGENTS.md 等）
+  retro/SKILL.md + route.md + reference.md  # 跨轮复盘：信号聚合 / 实验结算 / upstream 建议
   flow/
     SKILL.md + route.md      # 文档驱动闭环（Plan / Go / Review / Compound；quick / run 子模式）
     reference/
@@ -50,6 +51,8 @@ node .agents/skills/flow/scripts/flow-check.mjs docs --trace    # AC↔Task 矩�
 node .agents/skills/flow/scripts/flow-check.mjs docs --map      # 目录覆盖视图（anchors）
 node .agents/skills/flow/scripts/flow-check.mjs docs --gates    # 质量门契约校验
 node .agents/skills/flow/scripts/flow-check.mjs docs --state    # .flow/ 运行状态校验
+node .agents/skills/flow/scripts/flow-check.mjs docs --signals  # 跨轮信号摘要
+node .agents/skills/flow/scripts/flow-check.mjs docs --brief    # 是否该 retro（due: yes|no）
 node .agents/skills/flow/scripts/flow-check.mjs --fixtures      # checker 自测（全部通过）
 ```
 
@@ -76,5 +79,6 @@ node .agents/skills/flow/scripts/flow-check.mjs --fixtures      # checker 自测
 - 定位文档：先读该目录 `README.md` 索引，按 `scope` / `anchors` 只打开命中的 1–2 篇；禁止全量扫描 `docs/`
 - `anchors`：design/standard 声明代码落点（项目根相对路径或 glob），`--map` 输出覆盖视图
 - `frozen`：Feature 全部 AC 完成时写需求块哈希，防止正文被就地改写
+- 每 5 轮或信号触发时 `/retro`：读 `--signals`，记录写 `docs/others/retro/`，只出建议
 - Review 默认 `checklist`；高风险路径命中即强制（清单见 flow/reference/review.md）；未命中且计数 ≤ 3（排除 `docs/`）时询问是否跳过（仅明确不需要才 skip）；> 3 强制；结束前必须做需求回溯；Compound 有洞察才写
 - 校验：`node .agents/skills/flow/scripts/flow-check.mjs`

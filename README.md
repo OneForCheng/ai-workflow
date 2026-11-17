@@ -14,6 +14,7 @@
 | 高阶方案评审、不写码 | `/hld` | 产出可归档的评审文档 |
 | 要长期 docs 事实闭环 | `/flow` | Plan → Go → Review → Compound → 需求回溯 |
 | 新项目 AI 上下文 | `/init` | 生成 `AGENTS.md` / standards 等 |
+| 工作流自省 | `/retro` | 跨轮信号 → 实验与上游建议 |
 
 ## Skills 一览
 
@@ -25,6 +26,7 @@
 | `/hld` | 高阶方案设计（评审文档，不写代码） |
 | `/init` | 为当前项目生成跨工具规则（`AGENTS.md` 等） |
 | `/flow` | 文档驱动闭环：Features → Plans → 代码 → Designs/Standards → Review（默认 checklist）/Compound → 需求回溯；小改走 `/flow quick`，无人值守走 `/flow run` |
+| `/retro` | 跨轮复盘：聚合 `.flow` / docs 信号，结算实验，产出 ≤3 条改进建议 |
 
 源码目录：`.agents/skills/<name>/SKILL.md`
 
@@ -107,6 +109,7 @@ npx skills update rdd -g
   rdd/SKILL.md + route.md
   hld/SKILL.md + route.md + reference.md
   init/SKILL.md + route.md
+  retro/SKILL.md + route.md + reference.md
   flow/
     SKILL.md + route.md
     reference/init.md

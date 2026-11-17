@@ -5,9 +5,8 @@
     "mode": "repo",
     "tracked": true
   },
-  "status": "done",
-  "next": "plan",
-  "mode": "dry",
-  "currentRun": "RUN-DRY-1",
+  "status": "idle",
+  "next": "none",
+  "lastDryRun": "RUN-DRY-1",
   "updated": "2026-01-01T10:00:00+08:00"
 }

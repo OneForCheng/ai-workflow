@@ -52,7 +52,7 @@
 | `docs/plans` | 过程 | **追加**，一轮一文件，冻结不回改 | 方案与 Tasking |
 | `docs/designs` | 事实·镜像 | **变更**，只留最终态 | Source of Truth |
 | `docs/standards` | 事实·约束 | **变更**，只留最终态 | 架构/建表/API/命名/安全规范 |
-| `docs/others` | 记录 | 默认追加 | ADR / Release / 测试用例 |
+| `docs/others` | 记录 | 默认追加 | ADR / Release / 测试用例 / `retro/` |
 
 ## 三条写规则
 
@@ -65,6 +65,7 @@
 `Features → Plans(追加) → 代码 → Designs/Standards/Features(回填) → Review（默认 checklist） → Compound(系统进化) → 需求回溯 → 下一轮`
 
 - 小改可用 `/flow quick`（复用 Feature、一次确认）；无人值守可用 `/flow run`（需 `approved`）
+- 每 5 轮或信号触发时跑 `/retro`（记录在 `docs/others/retro/`，只出建议）
 - Review 默认 `checklist`；高风险路径强制；未命中且计数 ≤ 3 时询问是否跳过（仅明确不需要才 skip）；> 3 强制
 - 无论简繁，结束前必须做需求回溯（对照验收确认改动符合需求）
 - Compound：有洞察才写（先资格门再五问）；机检建议 / skill 草稿只出在对话，写入或安装须用户同意
@@ -99,6 +100,7 @@
 - `/flow` 自动判定状态；`/flow init` 初始化文档体系
 - 文档校验：`node .agents/skills/flow/scripts/flow-check.mjs docs`
 - 运行状态校验：`… docs --state`
+- 信号摘要：`… docs --signals`；触发判断：`… docs --brief`
 - 覆盖视图：`… --map`；AC 矩阵：`… --trace`；门契约：`… --gates`；自测：`--fixtures`
 - 质量命令：`<typecheck / format / lint / test 实际命令>`
 
