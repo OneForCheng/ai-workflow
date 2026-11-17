@@ -697,12 +697,18 @@ function signalsOf(res) {
     const m = d.base.match(/(\d{8})/);
     return m ? m[1] : String(d.data.updated || '').replace(/-/g, '');
   };
-  const lastRetroDate = retros.length ? dateOf(retros[retros.length - 1]) : '';
+  const lastRetro = retros.length ? retros[retros.length - 1] : null;
+  const lastRetroDate = lastRetro ? dateOf(lastRetro) : '';
+  const rawSnapshot = lastRetro && lastRetro.data ? lastRetro.data.plans_total : undefined;
+  const snapshot =
+    rawSnapshot !== undefined && rawSnapshot !== '' && !Array.isArray(rawSnapshot) && Number.isFinite(Number(rawSnapshot))
+      ? Number(rawSnapshot)
+      : null;
   const windowPlans = plans.filter((p) => {
     const c = String(p.data.created || '').replace(/-/g, '');
     return !lastRetroDate || c > lastRetroDate;
   });
-  const rounds = windowPlans.length;
+  const rounds = snapshot !== null ? Math.max(0, plans.length - snapshot) : windowPlans.length;
 
   let p1 = 0;
   let p2 = 0;

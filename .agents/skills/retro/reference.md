@@ -14,6 +14,7 @@ title: 第 1 次工作流 retro
 doc_type: other
 status: accepted
 scope: [workflow, retro]
+plans_total: 5        # retro 当时的 Plan 总数，用于下次计算轮次（快照差）
 updated: 2026-11-17
 ---
 
