@@ -104,12 +104,16 @@ updated: 2026-01-14
 ## 阶段 0：状态判定（`/flow` 无参数）
 
 0. 用户显式 `/flow quick`（或明确要求「小改快速走流程」）→ 加载 `reference/quick.md`，按其判定与一次确认执行
+0b. 用户显式 `/flow run`（或明确要求「无人值守 / 后台跑完这个 Plan」）→ 加载 `reference/run.md`：
+    - `state.status=running|paused` → 先按续跑处理
+    - `state.status=done` 且 `next=review` → 先 `/flow` 进入 Review，不开新 run
+    - 否则选 `approved` 的 Plan（多个则问；没有则提示先完成 G1），按 pre-flight 启动，不跳过信封与预算
 1. 无 `docs/` 或五目录/索引不全 → 进入 **init**，加载 `reference/init.md`
 2. 存在 `.flow/state.json` → 按 `status` 分支：
    - `running` → 问续跑 / 放弃（放弃置 `paused`）；续跑加载 `reference/run.md`
    - `paused` → 问恢复 / 放弃；恢复加载 `reference/run.md`
    - `done` 且 `next: review` → 直接进入 **Review**（G1.5 → Compound → G2）
-3. `docs/plans/README.md` 中存在 `status: draft|active` 的 Plan → 询问是否续做 → 进入 **Go**（续做后仍走 Review → Compound → G2）；若已有 `approved`，提示可改用 `/flow run`
+3. `docs/plans/README.md` 中存在 `status: draft|active` 的 Plan → 询问是否续做 → 进入 **Go**（续做后仍走 Review → Compound → G2）；若已有 `approved`，任务 ≥5 或预计 >1 小时时建议 `/flow run`（只建议，不自动进入）
 4. 其余 → 索取需求（描述 / Feature ID / 文件 / 工单） → 进入 **Plan·P1**
 
 ## Plan 模式（两阶段：需求确认 → 方案设计，零代码改动）
