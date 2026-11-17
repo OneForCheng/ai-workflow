@@ -730,8 +730,9 @@ function signalsOf(res) {
   }
 
   let open = 0;
-  for (const r of retros) {
-    for (const t of parseTables(r.body)) {
+  const latestRetro = retros.length ? retros[retros.length - 1] : null;
+  if (latestRetro) {
+    for (const t of parseTables(latestRetro.body)) {
       if (!t.length) continue;
       const head = t[0].map((c) => c.toLowerCase());
       const si = head.findIndex((c) => c.includes('状态'));
