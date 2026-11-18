@@ -2,4 +2,6 @@ exit: 0
 flags: signals
 P1 1
 工程摩擦（窗口内）：1
+摩擦明细
+PLAN-20260101-demo: 1. 单文件测试触发全仓覆盖率
 due: no
