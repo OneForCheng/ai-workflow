@@ -25,7 +25,7 @@
       quick.md               # 小改动最小闭环（复用 Feature / 一次确认 / 3 轮）
       compound.md            # 系统进化（含对话内 skill 草稿）
       summary.md             # 收尾：变更总结 + 询问提交（standard / quick / run）
-    scripts/flow-check.mjs   # 可选的文档一致性校验（结构 / --map / --trace / --gates / --fixtures）
+    scripts/flow-check.mjs   # 可选的文档一致性校验（结构 / --strict / --map / --trace / --gates / --fixtures）
     scripts/flow-commit.mjs  # 收尾提交助手（--dry-run / --repo / --all-repos / --check-message / --self-test）
     scripts/fixtures/        # checker 自测样本（改脚本必跑）
 ```
@@ -49,6 +49,7 @@ npx skills add . -l            # 列出可发现的 skill（不安装）
 npx skills add . -g -y         # 本地安装到全局（开发自测）
 npx skills update -g           # 更新已安装的全局 skill
 node .agents/skills/flow/scripts/flow-check.mjs docs            # 结构校验
+node .agents/skills/flow/scripts/flow-check.mjs docs --strict   # 可判定 WARN 升级为 error（如 Plan §8 已写但 status 非 done）
 node .agents/skills/flow/scripts/flow-check.mjs docs --trace    # AC↔Task 矩阵校验
 node .agents/skills/flow/scripts/flow-check.mjs docs --map      # 目录覆盖视图（anchors）
 node .agents/skills/flow/scripts/flow-check.mjs docs --gates    # 质量门契约校验

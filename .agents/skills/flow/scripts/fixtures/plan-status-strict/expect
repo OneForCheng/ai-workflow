@@ -1,0 +1,4 @@
+exit: 1
+flags: strict
+ERROR Plan status 仍为 draft，但 §8 已有内容（Go 似已收尾）：{docsDir}/plans/PLAN-20260101-demo.md；请改为 done（未完成则保持 active 并在 §8 注明遗留）（--strict）
+FAIL  1 error(s), 0 warning(s)

@@ -108,6 +108,7 @@
 - [ ] `node .agents/skills/flow/scripts/flow-check.mjs docs --trace` 通过（AC 全覆盖）
 - [ ] 本轮新增/变更的 design 的 `anchors` 命中真实文件；`--map` 无本轮新增模块「未覆盖」
 - [ ] 已确认的旧 Feature 正文未被改写（只有 `status` 与关联行变化）
+- [ ] **Plan `status` → `done`**（未完成 / 多轮进行中则保持 `active`，并在 §8 写清遗留；§8 已写却仍是 `draft`/`active` 会被 `flow-check` 报 WARN，`--strict` 下为 error）
 - [ ] 完成态 Feature 已写 `frozen`，且哈希匹配
 - [ ] `designs` / `standards` 中无历史、日期注释、理由残留
 - [ ] 未读历史 Plan 正文，未全量扫描 `docs/`

@@ -5,7 +5,7 @@
 ```
 <sample>/
   docs/      最小的五目录文档体系（只放触发该检查所需的文件）
-  expect     期望：`exit: 0|1`；可选 `flags: trace|gates|map`；其余每行一个应在输出中出现的片段
+  expect     期望：`exit: 0|1`；可选 `flags: trace|gates|map|state|signals|strict`；其余每行一个应在输出中出现的片段（`{docsDir}` 替换为该样本 docs 目录的绝对路径，可断言含路径的消息）
 ```
 
 - 新增样本后运行 `node ../../flow-check.mjs --fixtures`，全绿才算通过

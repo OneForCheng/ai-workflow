@@ -71,7 +71,7 @@ quick 压缩的是**Feature 与确认轮次**，不是审查与质量门。
 
 1. **确认**：用户回复确认
 2. **落档 + 实现**：写 `PLAN-<YYYYMMDD>-<slug>.md`（`tier: quick`，一页）+ 索引 → 实现 → 跑 `fast` 门禁
-3. **收尾**：回填事实（仅当事实变化）→ Plan §8 精简（含 `变更总结` + type）→ Review checklist → Compound（有摩擦才写）→ G2 一行回溯 → **变更总结 + 询问提交**（见 `reference/summary.md`）
+3. **收尾**：回填事实（仅当事实变化）→ Plan §8 精简（含 `变更总结` + type）→ **Plan `status` → `done`**（未完成则保持 `active` 并在 §8 注明遗留）→ Review checklist → Compound（有摩擦才写）→ G2 一行回溯 → **变更总结 + 询问提交**（见 `reference/summary.md`）
 
 Plan 至少包含：需求一句话 / 改动清单 / 验证 / 回填项（可无）/ 风险。矩阵与 AC 覆盖可省略。
 

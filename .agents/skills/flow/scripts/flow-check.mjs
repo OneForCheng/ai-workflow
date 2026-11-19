@@ -7,10 +7,11 @@
  *   node flow-check.mjs [docsDir] --map           结构校验 + 目录覆盖视图
  *   node flow-check.mjs [docsDir] --trace         结构校验 + Plan AC↔Task 矩阵校验
  *   node flow-check.mjs [docsDir] --gates         结构校验 + 质量门契约校验
+ *   node flow-check.mjs [docsDir] --strict        结构校验 + 把可判定的 WARN 升级为 error
  *   node flow-check.mjs [docsDir] --freeze <id>   打印 Feature 需求块哈希（只读）
  *   node flow-check.mjs --fixtures                运行自测样本（scripts/fixtures）
  *
- * 退出码: 0 = 通过（可含 warning）；1 = 存在 error / fixture 失败
+ * 退出码: 0 = 通过（可含 warning）；1 = 存在 error（含 --strict 升级）/ fixture 失败
  *
  * 检查项:
  *   1. 五目录与索引文件是否齐全
@@ -22,6 +23,7 @@
  *   7. 非文档体系文件（无 front-matter 且不符合命名、未登记索引）仅 WARN 跳过
  *   8. anchors（design/standard）：项目根相对路径或 glob，须命中真实文件；可出覆盖视图
  *   9. frozen（feature）：需求块哈希，防止已确认 Feature 正文被就地改写
+ *  10. Plan 已有非空 §8 但 status 仍为 draft/active → WARN（--strict 升级为 ERROR）
  */
 import { existsSync, lstatSync, readFileSync, readdirSync, realpathSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
@@ -206,6 +208,34 @@ function requirementBlock(body) {
 const hashRequirementBlock = (body) =>
   createHash('sha256').update(requirementBlock(body)).digest('hex').slice(0, 12);
 
+/** Plan §8（执行结果与偏差）标题；兼容「## 8. 」前缀、无编号与省略「与偏差」的写法 */
+const DEVIATION_HEADING_RE = /^##\s*(?:\d+[.、]\s*)?执行结果/;
+
+/** 取 Plan §8 段落正文；无该标题返回 null。取最后一个标题（Go 追加在文末，前文可能引用模板） */
+function deviationSection(body) {
+  const lines = body.split('\n');
+  let start = -1;
+  for (let i = 0; i < lines.length; i++) {
+    if (DEVIATION_HEADING_RE.test(lines[i])) start = i;
+  }
+  if (start < 0) return null;
+  const out = [];
+  for (const line of lines.slice(start + 1)) {
+    if (/^##\s/.test(line)) break;
+    out.push(line);
+  }
+  return out.join('\n');
+}
+
+/** 去 HTML 注释、标题行与表格分隔行后，是否仍有正文 */
+function hasSectionContent(section) {
+  return section
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .split('\n')
+    .map((l) => l.trim())
+    .some((l) => l && !l.startsWith('#') && !/^\|[\s:|-]+\|$/.test(l));
+}
+
 /** Markdown 表格 → 行 × 单元格 */
 function parseTables(body) {
   const tables = [];
@@ -361,6 +391,9 @@ function checkDocs(docsDir, opts = {}) {
     if (!perDir.has(dir)) perDir.set(dir, new Set());
     perDir.get(dir).add(rDocs);
   }
+
+  // Plan §8 已写 / status 漂移（draft·active → 期望 done）
+  checkPlanStatusDrift(res, opts);
 
   // plan.feature 引用完整性
   for (const d of res.docs) {
@@ -528,6 +561,22 @@ function checkHandwrittenMessages(res) {
         break;
       }
     }
+  }
+}
+
+/** Plan 已有非空 §8 但 status 仍是 draft/active → WARN（--strict 升级为 ERROR） */
+function checkPlanStatusDrift(res, opts = {}) {
+  const stale = res.docs.filter(
+    (d) => d.type === 'plan' && ['draft', 'active'].includes(d.data.status),
+  );
+  for (const plan of stale) {
+    const section = deviationSection(plan.body);
+    if (section === null || !hasSectionContent(section)) continue;
+    const msg =
+      `Plan status 仍为 ${plan.data.status}，但 §8 已有内容（Go 似已收尾）：` +
+      `${shown(res, plan.rDocs)}；请改为 done（未完成则保持 active 并在 §8 注明遗留）`;
+    if (opts.strict) err(res, `${msg}（--strict）`);
+    else warn(res, msg);
   }
 }
 
@@ -1045,14 +1094,18 @@ function runFixtures() {
       .split('\n')
       .map((l) => l.trim())
       .filter((l) => l && !l.startsWith('#') && !/^exit:/.test(l) && !/^flags:/.test(l));
-    const res = checkDocs(join(fdir, 'docs'), { map: flags.has('map') });
+    const res = checkDocs(join(fdir, 'docs'), {
+      map: flags.has('map'),
+      strict: flags.has('strict'),
+    });
     if (flags.has('trace')) checkTrace(res);
     if (flags.has('gates')) checkGates(res);
     if (flags.has('state')) checkState(res);
     let text = render(res, {});
     if (flags.has('signals')) text += '\n' + renderSignals(signalsOf(res));
     const code = res.errors.length ? 1 : 0;
-    const missing = wanted.filter((w) => !text.includes(w));
+    const docsShown = toPosix(res.docsDir);
+    const missing = wanted.filter((w) => !text.includes(w.replace(/\{docsDir\}/g, docsShown)));
     const ok = code === wantExit && missing.length === 0;
     console.log(`${ok ? 'ok  ' : 'FAIL'} fixture ${name} — exit ${code}${missing.length ? `，缺少：${missing.join(' / ')}` : ''}`);
     if (ok) pass++;
@@ -1076,7 +1129,7 @@ function main() {
     return;
   }
 
-  const res = checkDocs(docsDir, { map: flags.has('--map') });
+  const res = checkDocs(docsDir, { map: flags.has('--map'), strict: flags.has('--strict') });
   if (flags.has('--trace')) checkTrace(res);
   if (flags.has('--gates')) checkGates(res);
   if (flags.has('--state')) checkState(res);
