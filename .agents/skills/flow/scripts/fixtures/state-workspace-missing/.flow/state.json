@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "root": {
+    "path": ".",
+    "mode": "workspace",
+    "tracked": false
+  },
+  "status": "done",
+  "next": "review",
+  "updated": "2026-01-01T10:00:00+08:00"
+}

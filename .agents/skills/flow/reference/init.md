@@ -169,6 +169,30 @@ signals.jsonl
 
 init 阶段只约定位置，**不创建** `.flow/`。
 
+### 工作区多仓（可选）
+
+若工作区根不在 git 仓内、且其下深度 1 有多个独立仓：
+
+1. 探测：列出根下含 `.git`（目录或文件）的子目录，跳过 `node_modules` / `target` / `.m2repo`
+2. **只打印**建议清单，不写入 `.flow/`；`flow-commit` 首次运行会惰性读取或按同一规则探测
+3. 需要固定成员时，由用户创建 `.flow/repos.json`：
+
+```json
+{
+  "schema": 1,
+  "root": { "mode": "workspace", "tracked": false, "path": "." },
+  "repos": [
+    { "name": "backend", "path": "prm-psh-backend" },
+    { "name": "frontend", "path": "prm-psh-frontend" }
+  ],
+  "unmanaged": ["docs"]
+}
+```
+
+- `repos[].path` 必须是仓根（项目根相对路径）；`name` 唯一
+- `unmanaged` 只提示、不参与提交（如无 git 载体的 `docs/`）
+- 嵌套仓（根本身也是仓）以 `repos.json` 显式清单为准，不递归猜测
+
 ## 注意
 
 - 宪法中的路径、命令必须来自实际项目，不得编造

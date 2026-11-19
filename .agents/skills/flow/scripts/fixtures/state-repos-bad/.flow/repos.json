@@ -1,0 +1,8 @@
+{
+  "schema": 1,
+  "root": { "mode": "workspace", "tracked": false, "path": "." },
+  "repos": [
+    { "name": "backend", "path": "missing-repo" }
+  ],
+  "unmanaged": ["docs"]
+}

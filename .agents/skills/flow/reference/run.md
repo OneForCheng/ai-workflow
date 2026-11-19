@@ -35,6 +35,7 @@ run 不等于「夜间跑」：它指**在授权信封内、不逐步等确认�
 ```
 .flow/
   state.json       结论层，可入库
+  repos.json       工作区成员仓清单（workspace 可选）
   retro/           结论层，可入库（P2）
   runs/            证据层，默认本地
   signals.jsonl    证据层，默认本地
@@ -96,6 +97,7 @@ run 不等于「夜间跑」：它指**在授权信封内、不逐步等确认�
 2. 在信封内实现
 3. 跑 `fast` 门禁；失败按 `reference/go.md` §2 归因；本轮引入最多修 2 次
 4. 门禁通过 → commit：`node .agents/skills/flow/scripts/flow-commit.mjs --type <type> --summary "<T3 英文动作>"`
+   - workspace 模式追加 `--repo <任务所属仓>`
    - message 形如 `[用户名] #卡号 type: …`；`type` 按任务主导性质取（默认 `feat`）
    - 脚本负责用户名 / 卡号推断与 `git add -A`；失败按退出码处理，不盲目重试
    - 退出码 2（无改动）：账本 commit 记 `-`，任务照常 `done`；1 / 3：按失败处理并记录证据
@@ -161,6 +163,7 @@ run 账本 front-matter：`run` / `plan` / `status` / `approved` / `auth` / `win
 - 风险：超出声明的 diff / waiver / 依赖变更 …
 - 交付：分支 …，commit …
 - 变更总结：<英文 one-liner>；建议 message：`[用户名] #卡号 type: …`（由账本任务表汇总，不自动追加提交）
+- 按仓交付：`backend` → `<sha> <message>`；`frontend` → `<sha> <message>`；`unmanaged` → 提示无载体
 - 下一步：/flow（进入 Review）｜修复 <park> 后 /flow run --resume
 ```
 

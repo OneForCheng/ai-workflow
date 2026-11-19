@@ -22,6 +22,8 @@
 
 满足 → 跳到 §3 预览 message；否则按下面重新生成。
 
+**署名来源（MUST）**：用户名 / 卡号 MUST 取自 `flow-commit --dry-run` 或 `--check-message` 的输出；脚本不可用（非 git 仓 / 无载体）时写 `<由脚本推断>` 并说明原因。禁止用 `user.email`、`docs` 的 `owner`、目录名等旁证推断。
+
 1. 读**实际改动**：`git status --short`；需要时 `git diff --stat`
    - run 用 `git log <base>..HEAD --oneline` + `git diff <base>...HEAD --stat`
 2. 写一句英文、动词开头、概括行为变化，不逐列文件名
@@ -62,9 +64,24 @@
 ```bash
 node .agents/skills/flow/scripts/flow-commit.mjs \
   --dry-run --type <type> --summary "<en one-liner>"
+
+# 工作区多仓
+node .agents/skills/flow/scripts/flow-commit.mjs \
+  --dry-run --repo backend --type <type> --summary "<en one-liner>"
+node .agents/skills/flow/scripts/flow-commit.mjs \
+  --dry-run --all-repos --type <type> --summary "<en one-liner>"
 ```
 
 用户已指定时追加 `--card PP-123` / `--user "xxx"`。脚本输出中的 `message:` 行即候选。
+
+已有候选 message 时，先校验而不是自己拼：
+
+```bash
+node .agents/skills/flow/scripts/flow-commit.mjs \
+  --check-message "[用户名] #卡号 type: <en one-liner>"
+```
+
+失败会 exit 1 并给出 `hint: 正确候选 …`；按 hint 修正后再走 §5。
 
 ## 4. 输出模板（G2 最后一段）
 
@@ -84,6 +101,8 @@ node .agents/skills/flow/scripts/flow-commit.mjs \
    - 只说 `commit` → 全部自动推断
    - `commit 卡号：PP-123` → `--card PP-123`
    - `commit 用户名：xxx 卡号：PP-123` → `--user xxx --card PP-123`
+   - `commit backend` → `--repo backend`
+   - `commit 全部` / `commit --all-repos` → `--all-repos`
 2. 执行（去掉 `--dry-run`）：
 
    ```bash
@@ -98,13 +117,34 @@ node .agents/skills/flow/scripts/flow-commit.mjs \
 
 - run 的逐任务 commit 在任务循环中已执行（见 `run.md` §5），使用同一脚本与 message 格式。
 - 晨报「变更总结」给整轮候选：从**账本任务表 + Plan §4 任务卡**汇总，不重新读整轮 diff。
+- 工作区多仓按 `repo` 分行列 message；`unmanaged` 路径单列一句。
 - 晨报只出候选，**不再调用非 dry-run 脚本**。
 - 若 run 结束仍有未提交改动（park / 中断），候选只覆盖这些改动，并注明「部分改动未提交」。
 
-## 7. 硬规则
+## 7. 多仓与无载体工作区
+
+解析优先级（由 `flow-commit.mjs` 执行）：
+
+| # | 条件 | 行为 |
+|---|------|------|
+| 1 | `--repo <name>` | 只处理 `.flow/repos.json` 中的成员仓 |
+| 2 | cwd 在 git 仓内 | 单仓旧路径，不读 repos.json |
+| 3 | 找到 `.flow/repos.json` | 全部成员仓；`unmanaged` 只提示 |
+| 4 | 无清单 | 在工作区根深度 1 探测含 `.git` 的子目录 |
+| 5 | 无任何载体 | exit 4，提示「本轮无需提交」 |
+
+- 非 dry-run 且 **>1 个脏仓**：必须 `--all-repos` 或 `--repo <name>`，否则 exit 5、零提交
+- 逐仓 `add -A` + commit；任一仓失败立即停止，输出「已提交 / 未处理」，exit 3
+- 各仓用户名各自读 `git config user.name`；`--user` 全局覆盖
+- 卡号各仓推断不一致且无 `--card` → WARN + exit 1
+- 询问话术：`2 个仓有改动：backend / frontend。全部提交、只提交某个，还是暂不提交？`
+- `--check-message` 默认校验首个成员仓；指定仓用 `--repo`
+
+## 8. 硬规则
 
 - 总结必须来自事实：Plan §8 `变更总结`（满足信任条件）或实际 diff；禁止照抄 P2 方案描述
 - 未确认前不提交（run 的任务提交仅由授权信封放行，不属此列）
+- 多仓不静默批量提交；未显式 `--all-repos` / `--repo` 时宁停（exit 5）
 - 不 push / merge / 改历史
 - 提交失败不得删除、重置或 stash 本轮改动
 - 执行前用 dry-run 展示文件数；发现无关改动混入时先停下确认

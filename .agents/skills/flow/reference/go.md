@@ -145,6 +145,8 @@
 > **本轮改动文件**列全量路径；**Review 计数**排除 `docs/`（含索引）后供询问门禁使用。二者与 **工程摩擦** 一并供 Review / Compound 读集，避免后续阶段扫库或「对话里提过、Plan 里消失」。
 >
 > **变更总结**在实现完成后写，供 G2 直接复用（省一次总结）。Review 若有 P1 修复改动文件，G2 须按 `reference/summary.md` 重新生成，不得沿用旧候选。
+>
+> `变更总结` 只写 `<en one-liner>` 与 `type`；**MUST NOT** 写 `[用户名] #卡号 type: …` 完整 message——该行只由 `flow-commit.mjs` 生成。
 
 ## Design 骨架
 

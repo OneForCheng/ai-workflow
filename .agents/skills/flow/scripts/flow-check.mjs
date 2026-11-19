@@ -23,7 +23,8 @@
  *   8. anchors（design/standard）：项目根相对路径或 glob，须命中真实文件；可出覆盖视图
  *   9. frozen（feature）：需求块哈希，防止已确认 Feature 正文被就地改写
  */
-import { existsSync, lstatSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, lstatSync, readFileSync, readdirSync, realpathSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -462,6 +463,74 @@ function expandAcIds(cell) {
   return [...ids];
 }
 
+/** 读取某目录的 git user.name；非仓或失败返回空串 */
+function gitUserName(dir) {
+  try {
+    return execFileSync('git', ['config', 'user.name'], {
+      cwd: dir,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim();
+  } catch {
+    return '';
+  }
+}
+
+function gitRepoRoot(dir) {
+  try {
+    return execFileSync('git', ['rev-parse', '--show-toplevel'], {
+      cwd: dir,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim();
+  } catch {
+    return '';
+  }
+}
+
+/** 期望 user：优先 .flow/repos.json 首个仓，否则 docs 同级项目根 */
+function expectedUserForDocs(res) {
+  const reposPath = join(res.root, '.flow', 'repos.json');
+  if (existsSync(reposPath)) {
+    try {
+      const data = JSON.parse(readFileSync(reposPath, 'utf8'));
+      const rel = data?.repos?.[0]?.path;
+      if (typeof rel === 'string' && rel) return gitUserName(resolve(res.root, rel));
+    } catch {
+      return '';
+    }
+    return '';
+  }
+  return gitUserName(res.root);
+}
+
+const HANDWRITTEN_PLACEHOLDERS = new Set(['user', 'username', 'name', 'owner', 'bot', '用户名']);
+
+/** 对 draft/active Plan 中手填的用户名做 WARN（无 git user 时跳过） */
+function checkHandwrittenMessages(res) {
+  const expected = expectedUserForDocs(res);
+  if (!expected) return;
+  const re =
+    /\[([A-Za-z][A-Za-z0-9 .&_-]{0,40})\]\s+#([^\s]+)\s+(feat|fix|refactor|test|chore|style|docs|mock):/g;
+  for (const plan of res.docs.filter(
+    (d) => d.type === 'plan' && ['draft', 'active'].includes(d.data.status),
+  )) {
+    re.lastIndex = 0;
+    let match;
+    while ((match = re.exec(plan.body))) {
+      const name = match[1].trim();
+      if (HANDWRITTEN_PLACEHOLDERS.has(name.toLowerCase())) continue;
+      if (name !== expected) {
+        warn(
+          res,
+          `变更总结疑似手填用户名（期望 ${expected}）：${shown(res, plan.rDocs)} → ${match[0]}`,
+        );
+        break;
+      }
+    }
+  }
+}
+
 function checkTrace(res) {
   const featureById = new Map(res.docs.filter((d) => d.type === 'feature').map((d) => [d.data.id, d]));
   for (const plan of res.docs.filter((d) => d.type === 'plan')) {
@@ -509,6 +578,7 @@ function checkTrace(res) {
       }
     }
   }
+  checkHandwrittenMessages(res);
 }
 
 /** 质量门契约：```yaml 列表，字段 id/layer/fast/full/on_fail */
@@ -597,6 +667,63 @@ function validateLedger(res, dir, runId, expectMode) {
   if (!hasTaskTable(body)) err(res, '账本缺少任务表（表头需含「任务」「状态」）');
 }
 
+/** 校验 .flow/repos.json（可选）；workspace 模式缺清单给 WARN */
+function validateReposFile(res, flowDir, state) {
+  const reposPath = join(flowDir, 'repos.json');
+  if (!existsSync(reposPath)) {
+    if (state?.root?.mode === 'workspace') {
+      warn(res, `workspace 模式缺少 .flow/repos.json：${flowDir}`);
+    }
+    return;
+  }
+  if (state?.root?.mode !== 'workspace') {
+    warn(res, '.flow/repos.json 存在但 state.root.mode 不是 workspace');
+  }
+  let data;
+  try {
+    data = JSON.parse(readFileSync(reposPath, 'utf8'));
+  } catch (e) {
+    err(res, `.flow/repos.json 不是合法 JSON：${e.message}`);
+    return;
+  }
+  if (data.schema !== 1) err(res, '.flow/repos.json 的 schema 必须为 1');
+  if (!Array.isArray(data.repos) || data.repos.length === 0) {
+    err(res, '.flow/repos.json 的 repos 必须是非空数组');
+    return;
+  }
+  const root = resolve(flowDir, '..');
+  const names = new Set();
+  for (const item of data.repos) {
+    if (!item || typeof item.name !== 'string' || !item.name.trim()) {
+      err(res, 'repos[].name 必须是非空字符串');
+      continue;
+    }
+    const name = item.name.trim();
+    if (names.has(name)) err(res, `repos.json 中 name 重复：${name}`);
+    names.add(name);
+    if (typeof item.path !== 'string' || !item.path.trim()) {
+      err(res, `repos.json 中 ${name} 缺少 path`);
+      continue;
+    }
+    const abs = resolve(root, item.path);
+    if (!existsSync(abs)) {
+      err(res, `成员仓不存在：${item.path}`);
+      continue;
+    }
+    const actual = gitRepoRoot(abs);
+    if (!actual) {
+      err(res, `成员仓不是 git 仓：${item.path}`);
+      continue;
+    }
+    if (realpathSync(actual) !== realpathSync(abs)) {
+      err(res, `成员仓 path 必须指向仓根：${item.path}`);
+    }
+  }
+  if (data.unmanaged !== undefined && !Array.isArray(data.unmanaged)) {
+    err(res, 'repos.json 的 unmanaged 必须是数组');
+  }
+}
+
 function checkState(res) {
   const dir = join(res.root, '.flow');
   if (!existsSync(dir)) {
@@ -624,6 +751,7 @@ function checkState(res) {
   if (typeof state.root?.tracked !== 'boolean') err(res, 'state.root.tracked 必须是 boolean');
   else if (!state.root.tracked) warn(res, '证据层未纳入 git（tracked=false）：换机器或 CI 将丢失历史');
   if (!state.updated) err(res, 'state.updated 缺失');
+  validateReposFile(res, dir, state);
   if (state.status === 'running') {
     if (!state.currentRun) err(res, 'state.status=running 时 currentRun 必填');
     else validateLedger(res, dir, state.currentRun, 'run');

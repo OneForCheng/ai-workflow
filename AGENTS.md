@@ -26,7 +26,7 @@
       compound.md            # 系统进化（含对话内 skill 草稿）
       summary.md             # 收尾：变更总结 + 询问提交（standard / quick / run）
     scripts/flow-check.mjs   # 可选的文档一致性校验（结构 / --map / --trace / --gates / --fixtures）
-    scripts/flow-commit.mjs  # 收尾提交助手（--dry-run / --self-test；用户确认后才提交）
+    scripts/flow-commit.mjs  # 收尾提交助手（--dry-run / --repo / --all-repos / --check-message / --self-test）
     scripts/fixtures/        # checker 自测样本（改脚本必跑）
 ```
 
@@ -58,12 +58,15 @@ node .agents/skills/flow/scripts/flow-check.mjs docs --brief    # 是否该 retr
 node .agents/skills/flow/scripts/flow-check.mjs --fixtures      # checker 自测（全部通过）
 node .agents/skills/flow/scripts/flow-commit.mjs --self-test    # 提交脚本自测（临时仓库）
 node .agents/skills/flow/scripts/flow-commit.mjs --dry-run --type feat --summary "add x"  # 预览 message
+node .agents/skills/flow/scripts/flow-commit.mjs --repo backend --type feat --summary "add x"  # 指定仓
+node .agents/skills/flow/scripts/flow-commit.mjs --all-repos --type feat --summary "add x"  # 全部仓
+node .agents/skills/flow/scripts/flow-commit.mjs --check-message "[HuangCheng] #N/A feat: add x"  # 校验署名
 ```
 
 ## 约束
 
 - 本仓库无构建步骤、无脚本依赖：skill 内容以纯 Markdown 提示词为主；脚本均为零依赖 Node ESM
-- `flow-check` 各子命令**只读**，修改后必须跑 `--fixtures`；`flow-commit` 在交互收尾中仅在用户确认后写仓库，run 的逐任务提交由授权信封放行；修改后必须跑 `--self-test`
+- `flow-check` 各子命令**只读**，修改后必须跑 `--fixtures`；`flow-commit` 在交互收尾中仅在用户确认后写仓库，run 的逐任务提交由授权信封放行；多仓以 `.flow/repos.json` 或深度 1 探测为准；修改后必须跑 `--self-test`
 - 不提交 `node_modules`、`.DS_Store`、编辑器私有配置（见 `.gitignore`）
 - 修改 skill 后需确认 `npx skills add . -l` 仍能正确发现，且 `reference/`、`scripts/` 随目录一并安装到目标项目
 
