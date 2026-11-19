@@ -19,7 +19,7 @@ disable-model-invocation: true
 | 命令 | 职责 |
 |------|------|
 | `/hld` | 上游：高阶方案评审，不改代码 |
-| **`/flow`** | **文档驱动闭环**：Plan → Go → Review → Compound → 需求回溯 |
+| **`/flow`** | **文档驱动闭环**：Plan → Go → Review → Compound → 需求回溯 → 变更总结 / 可选提交 |
 | **`/flow run`** | **无人值守执行**：已批准的 Plan 在授权信封内跑完（见 `reference/run.md`） |
 | **`/flow quick`** | **小改动最小闭环**：复用 Feature、一次确认、3 轮内完成（见 `reference/quick.md`） |
 | `/rdd` `/do` | 轻量实现流：不维护 `docs/` 体系 |
@@ -44,6 +44,7 @@ disable-model-invocation: true
 ```
 起点 Features(读) → [追加]Plans → 代码 + 必要测试 → [变更]Designs/Standards/Features
                          → Review（默认 checklist；高风险路径强制） → Compound(有洞察才写) → G2 需求回溯
+                         → 变更总结（commit 候选 + 询问提交）
                                                                                                                   │
                                                               ┌──────── 下一轮从更新后的事实出发 ─────────────┘
 ```
@@ -57,7 +58,7 @@ disable-model-invocation: true
 | **G0** | Plan·P1 结束 | 需求理解已确认（若主张旧 Feature 有问题，须在此点明具体问题）；零待确认项且来源结构完整时可直接进 P2。此前禁止写 `docs/` 与改代码 |
 | **G1** | Plan·P2 结束 | 用户回复「确认方案，开始实现」；此前禁止任何代码改动 |
 | **G1.5** | Review | checklist 已输出；P1 须先修复或征得用户接受后再进 Compound。未命中高风险路径且用户明确不需要 Review 时，`skip` 直接通过 |
-| **G2** | Compound 结束 | 质量检查已通过 + 索引同步 + Compound 已处理（或声明无洞察）+ **需求回溯表已输出**（无论改动简繁，一律对照验收/需求确认符合性） |
+| **G2** | Compound 结束 | 质量检查已通过 + 索引同步 + Compound 已处理（或声明无洞察）+ **需求回溯表已输出**（无论改动简繁，一律对照验收/需求确认符合性）+ **变更总结已输出并询问提交**（run 在晨报输出候选） |
 
 ## 小改动可询问跳过 Review
 
@@ -156,6 +157,15 @@ updated: 2026-01-14
 
 > **G2 需求回溯一律执行**：无论改动多简单，都必须对照 Plan/Feature 验收标准输出回溯表，确认改动符合已确认需求。
 
+## 收尾：变更总结与提交
+
+**加载 `reference/summary.md`。** G2 各段输出后执行：
+
+1. **读实际改动**（`git status` / `git diff`），用一句英文、动词开头概括本轮行为变化；不照抄 Plan
+2. 用 `node .agents/skills/flow/scripts/flow-commit.mjs --dry-run` 得到 `[用户名] #卡号 type: 摘要` 候选，按模板输出「变更总结」并**询问是否 commit**
+3. 用户明确确认后去掉 `--dry-run` 执行提交；未确认不提交，工作区保持原样
+4. run 模式只在晨报给整轮候选，不追问、不追加提交；其逐任务 commit 由授权信封放行
+
 ## 全局硬规则
 
 1. **G0 之前不写 `docs/`、G1 之前不改代码**；不确定处主动提问
@@ -167,4 +177,5 @@ updated: 2026-01-14
 6. **Review 默认 checklist、Compound 禁止空转**：高风险路径命中即强制 checklist；仅未命中且计数 ≤ 3、用户明确不需要时才可 skip；无洞察时不得为凑流程改 `docs/` 或 `AGENTS.md`；**但** Go 已记账的工程摩擦 / 验证绕过 **必须**进入 Compound（至少 Plan「流程改进」，常建议 AGENTS 补丁）——只写流程改进不算空转，也不得写成「无系统级沉淀」
 7. **Skill / 机检建议不落库（默认可）**：skill 草稿与测试/lint 机检建议默认只出现在对话（及 Plan「流程改进」）；写入仓库或安装 skill 须用户明确同意
 8. **需求回溯不可跳过**：G2 必须输出对照验收/需求的回溯表
-9. 语言与用户一致；本工作流产出的 docs 是正式产物，但不额外生成总结/报告类文件（回溯表在对话输出即可）
+9. 语言与用户一致；本工作流产出的 docs 是正式产物，但不额外生成总结/报告类文件（回溯表与变更总结在对话输出即可）
+10. **变更总结基于实际 diff，提交必须经用户确认**：禁止照抄 Plan；禁止未确认执行 `flow-commit`（run 的逐任务提交由授权信封放行）；禁止 push / merge / 改历史

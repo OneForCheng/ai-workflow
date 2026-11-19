@@ -9,7 +9,7 @@ run 不等于「夜间跑」：它指**在授权信封内、不逐步等确认�
 | 做 | 不做 |
 |----|------|
 | 按 Plan §4 顺序执行任务 | 不做 Review / Compound（交回 `/flow`） |
-| 在信封内改代码、跑门禁、逐任务 commit | 不 push / merge / 改发布配置 |
+| 在信封内改代码、跑门禁、逐任务 commit（规范 message） | 不 push / merge / 改发布配置 |
 | 遇歧义按策略决策并记录 | 不做跨 Plan 排队 |
 | 失败任务 park、不阻塞后续 | 不改 Feature / Plan 正文 |
 | 写账本、信号、晨报 | 不安装**未声明**的依赖 |
@@ -95,10 +95,15 @@ run 不等于「夜间跑」：它指**在授权信封内、不逐步等确认�
 1. **上下文包**：Task 卡 + 对应 AC + 相关 design 片段 + anchors；不继承上一任务的对话
 2. 在信封内实现
 3. 跑 `fast` 门禁；失败按 `reference/go.md` §2 归因；本轮引入最多修 2 次
-4. 门禁通过 → commit：`flow(<run>): T3 <动作>`
+4. 门禁通过 → commit：`node .agents/skills/flow/scripts/flow-commit.mjs --type <type> --summary "<T3 英文动作>"`
+   - message 形如 `[用户名] #卡号 type: …`；`type` 按任务主导性质取（默认 `feat`）
+   - 脚本负责用户名 / 卡号推断与 `git add -A`；失败按退出码处理，不盲目重试
+   - 退出码 2（无改动）：账本 commit 记 `-`，任务照常 `done`；1 / 3：按失败处理并记录证据
 5. 账本追加：状态 / 门禁 / commit / 耗时
 6. 写 signal：`task_done` / `task_parked` / `gate_fail` / `scope_violation`
 7. 检查预算与停止条件
+
+> **信封授权 vs 用户确认**：这里的逐任务 commit 由授权信封（A1–A3）放行，不属于收尾「用户确认后提交」；但 message 仍须符合 `reference/summary.md` 与 `flow-commit.mjs` 的格式。收尾只出整轮候选，不再追加提交。
 
 停止条件（任一满足即停并出晨报）：预算耗尽、连续失败 ≥ K、park 比例超阈值、连续 2 个任务无 commit、触发 A4 或红线。
 
@@ -116,6 +121,7 @@ run 不等于「夜间跑」：它指**在授权信封内、不逐步等确认�
 每条必填：**复现命令 / 已尝试 / 失败原因 / 建议下一步 / 影响文件**。
 
 - 不阻塞无关任务；依赖它的任务标 `blocked-by: Tn` 并跳过
+- park 时记录该任务的未提交改动；后续任务 commit 前先还原或 stash，禁止让 `git add -A` 把失败任务的残留带入下一次提交
 - 晨报按「需人决策」排序，放在最上面
 
 ## 7. 账本与状态
@@ -154,6 +160,7 @@ run 账本 front-matter：`run` / `plan` / `status` / `approved` / `auth` / `win
 - 需你决策：auto 决策 n 条（可否决）…
 - 风险：超出声明的 diff / waiver / 依赖变更 …
 - 交付：分支 …，commit …
+- 变更总结：<英文 one-liner>；建议 message：`[用户名] #卡号 type: …`（不自动追加提交）
 - 下一步：/flow（进入 Review）｜修复 <park> 后 /flow run --resume
 ```
 
@@ -178,7 +185,7 @@ run 账本 front-matter：`run` / `plan` / `status` / `approved` / `auth` / `win
 | 用户中断 | `paused` | `none` | 晨报 |
 | CRITICAL | `paused` | `review` | 晨报置顶 |
 
-run 结束**不输出 G2**；Review → Compound → G2 由 `/flow` 继续（见 `reference/review.md`）。
+run 结束**不输出 G2**；Review → Compound → G2 由 `/flow` 继续（见 `reference/review.md`）。晨报的「变更总结」只出整轮候选，最终提交由用户确认后执行。
 
 ## 11. `--dry-run`（只读排演）
 

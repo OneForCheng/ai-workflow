@@ -25,7 +25,7 @@
 | `/rdd` | 需求驱动：分析 → 方案 → 实现 → 验证；复杂改动可选独立 Code Review |
 | `/hld` | 高阶方案设计（评审文档，不写代码） |
 | `/init` | 为当前项目生成跨工具规则（`AGENTS.md` 等） |
-| `/flow` | 文档驱动闭环：Features → Plans → 代码 → Designs/Standards → Review（默认 checklist）/Compound → 需求回溯；小改走 `/flow quick`，无人值守走 `/flow run` |
+| `/flow` | 文档驱动闭环：Features → Plans → 代码 → Designs/Standards → Review（默认 checklist）/Compound → 需求回溯 → 变更总结 / 可选提交；小改走 `/flow quick`，无人值守走 `/flow run` |
 | `/retro` | 跨轮复盘：聚合 `.flow` / docs 信号，结算实验，产出 ≤3 条改进建议 |
 
 源码目录：`.agents/skills/<name>/SKILL.md`
@@ -119,7 +119,9 @@ npx skills update rdd -g
     reference/compound.md
     reference/run.md
     reference/quick.md
+    reference/summary.md   # 收尾变更总结 + 提交询问
     scripts/flow-check.mjs
+    scripts/flow-commit.mjs # 提交助手（--dry-run / --self-test）
     scripts/fixtures/      # checker 自测样本（--fixtures）
 ```
 

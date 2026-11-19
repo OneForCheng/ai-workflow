@@ -134,7 +134,12 @@ disable-model-invocation: true
 
 ## 遗留
 - <项 / 无；含未落地的机检 / AGENTS 建议>
+
+## 变更总结（commit 候选）
+- <按 reference/summary.md 生成；G2 最后一段>
 ```
+
+> G2 各段输出后，**加载 `reference/summary.md`** 执行变更总结与提交询问；未确认不得执行提交。
 
 确认后本轮闭环结束；下一轮 Plan 以更新后的 Features/Designs/**系统规则**为起点。
 
@@ -146,4 +151,5 @@ disable-model-invocation: true
 - [ ] 落档建议已按优先级罗列；除 Plan 追加外，未在用户同意前写入 standard / ADR / AGENTS / 测试 / lint / skill
 - [ ] 未把变更历史写入 designs/standards；未在可机检时新建重复 prose standard
 - [ ] 未自动安装 skill
+- [ ] 变更总结已基于实际 diff 输出；未在用户确认前提交
 - [ ] 可选：`node .agents/skills/flow/scripts/flow-check.mjs docs`

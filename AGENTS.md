@@ -24,7 +24,9 @@
       run.md                 # 无人值守执行（信封 / 决策窗口 / 账本 / park / 晨报 / dry-run）
       quick.md               # 小改动最小闭环（复用 Feature / 一次确认 / 3 轮）
       compound.md            # 系统进化（含对话内 skill 草稿）
+      summary.md             # 收尾：变更总结 + 询问提交（standard / quick / run）
     scripts/flow-check.mjs   # 可选的文档一致性校验（结构 / --map / --trace / --gates / --fixtures）
+    scripts/flow-commit.mjs  # 收尾提交助手（--dry-run / --self-test；用户确认后才提交）
     scripts/fixtures/        # checker 自测样本（改脚本必跑）
 ```
 
@@ -54,12 +56,14 @@ node .agents/skills/flow/scripts/flow-check.mjs docs --state    # .flow/ 运行�
 node .agents/skills/flow/scripts/flow-check.mjs docs --signals  # 跨轮信号摘要
 node .agents/skills/flow/scripts/flow-check.mjs docs --brief    # 是否该 retro（due: yes|no）
 node .agents/skills/flow/scripts/flow-check.mjs --fixtures      # checker 自测（全部通过）
+node .agents/skills/flow/scripts/flow-commit.mjs --self-test    # 提交脚本自测（临时仓库）
+node .agents/skills/flow/scripts/flow-commit.mjs --dry-run --type feat --summary "add x"  # 预览 message
 ```
 
 ## 约束
 
-- 本仓库无构建步骤、无脚本依赖：skill 内容必须是纯 Markdown 提示词；唯一的可选脚本是零依赖 Node ESM
-- `flow-check` 各子命令**只读**；修改 checker 后必须跑 `--fixtures`，保证全部样本仍按预期通过/失败
+- 本仓库无构建步骤、无脚本依赖：skill 内容以纯 Markdown 提示词为主；脚本均为零依赖 Node ESM
+- `flow-check` 各子命令**只读**，修改后必须跑 `--fixtures`；`flow-commit` 在交互收尾中仅在用户确认后写仓库，run 的逐任务提交由授权信封放行；修改后必须跑 `--self-test`
 - 不提交 `node_modules`、`.DS_Store`、编辑器私有配置（见 `.gitignore`）
 - 修改 skill 后需确认 `npx skills add . -l` 仍能正确发现，且 `reference/`、`scripts/` 随目录一并安装到目标项目
 
@@ -75,7 +79,7 @@ node .agents/skills/flow/scripts/flow-check.mjs --fixtures      # checker 自测
 | `docs/standards` | 事实·约束 | **变更**，只留最终态 |
 | `docs/others` | 记录 | 默认**追加** |
 
-- 闭环：`Features → Plans → 代码/skill → Designs/Standards/Features → Review → Compound → 需求回溯`
+- 闭环：`Features → Plans → 代码/skill → Designs/Standards/Features → Review → Compound → 需求回溯 → 变更总结/可选提交`
 - 定位文档：先读该目录 `README.md` 索引，按 `scope` / `anchors` 只打开命中的 1–2 篇；禁止全量扫描 `docs/`
 - `anchors`：design/standard 声明代码落点（项目根相对路径或 glob），`--map` 输出覆盖视图
 - `frozen`：Feature 全部 AC 完成时写需求块哈希，防止正文被就地改写
