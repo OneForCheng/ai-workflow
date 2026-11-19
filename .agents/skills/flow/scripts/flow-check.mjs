@@ -74,6 +74,7 @@ const FILE_RE = {
 /** ID 必须等于文件名的类型 */
 const ID_EQ_FILENAME = ['plan'];
 
+const HEADING_LINE = /^#{1,6}\s/;
 const HISTORY_HEADING = /(变更历史|更新记录|修订记录|changelog|change\s*log)/i;
 const HISTORY_LINE = /(新增|移除|变更|修改|调整|迁移)/;
 
@@ -334,7 +335,7 @@ function checkDocs(docsDir, opts = {}) {
     }
     if ((type === 'design' || type === 'standard') && body) {
       for (const line of body.split('\n')) {
-        if (HISTORY_HEADING.test(line)) {
+        if (HEADING_LINE.test(line) && HISTORY_HEADING.test(line)) {
           warn(res, `疑似变更历史（designs/standards 只留最终态）：${shown(res, rDocs)} → ${line.trim().slice(0, 40)}`);
           break;
         }
