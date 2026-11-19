@@ -1,5 +1,6 @@
 exit: 0
 flags: signals, brief
-工程摩擦（窗口内）：2 个 Plan 有记账
+工程摩擦（窗口内）：2 个 Plan 有记账；waiver：0
 摩擦主题：docs 2 / db 1 / other 1 / test 1 / tooling 1（friction_repeat=1）
+P1 0
 due: no | rounds=2 | p1=0 | friction=2 | friction_repeat=1 | parks=0 | source=docs

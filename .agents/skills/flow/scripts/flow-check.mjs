@@ -848,10 +848,13 @@ function fieldAfter(body, prefix) {
   return vals.join(' ');
 }
 
-/** 「无」判定：只认独立值（`无` / `无 / …` / `无（…）` / `无｜…`），避免「无法…」被误判 */
-const NONE_VALUE_RE = /^无(?=$|[\s/（(、,，.。;；｜|])/;
+/** 「无」判定：只认独立值（`无` / `无 / …` / `无（…）` / `无｜…`），避免「无法…」「无 CI 权限」被误判 */
+const NONE_VALUE_RE = /^无(?=$|[\s]*[\/／（(：:、,，.。;；｜|])/;
 
 const isNoneValue = (v) => NONE_VALUE_RE.test(String(v).trim());
+
+/** 去掉列表标记（`1.` / `-` / `*`），用于条目级「无」判定 */
+const stripListMarker = (s) => String(s).trim().replace(/^(?:[-*]|\d+\.)\s+/, '').trim();
 
 /** 摩擦主题词表：首命中生效，other 兜底（顺序即优先级；英文加词边界与常见复数） */
 const FRICTION_TOPIC_RULES = [
@@ -871,13 +874,21 @@ const topicOfFriction = (entry) => {
   return 'other';
 };
 
-/** 读取「工程摩擦」字段下的全部条目（兼容 1. / - / 续行）；第一条用于明细展示 */
-function frictionEntries(body) {
+/** 定位「工程摩擦」字段；无该字段返回 null */
+function frictionField(body) {
   const prefix = '- 工程摩擦（候选 Compound）';
   const lines = body.split('\n');
   const i = lines.findIndex((l) => l.trim().startsWith(prefix));
-  if (i < 0) return [];
+  if (i < 0) return null;
   const inline = lines[i].trim().slice(prefix.length).replace(/^[：:]\s*/, '').trim();
+  return { lines, i, inline };
+}
+
+/** 读取「工程摩擦」字段下的全部条目（兼容 1. / - / 续行）；第一条用于明细展示 */
+function frictionEntries(body) {
+  const field = frictionField(body);
+  if (!field) return [];
+  const { lines, i, inline } = field;
   if (inline && !isNoneValue(inline)) return [inline];
   const entries = [];
   for (let j = i + 1; j < lines.length; j++) {
@@ -959,10 +970,18 @@ function signalsOf(res) {
     p1 += rc.p1;
     p2 += rc.p2;
     const fr = fieldAfter(p.body, '工程摩擦（候选 Compound）');
-    const hasFriction = Boolean(fr && !isNoneValue(fr));
+    const inline = frictionField(p.body)?.inline ?? '';
+    const entries = frictionEntries(p.body);
+    const fallback = entries.length ? '' : fr;
+    const hasFriction = inline
+      ? !isNoneValue(inline)
+      : entries.length > 0 ||
+        (fallback.trim() !== '' &&
+          fallback
+            .split(/\s+(?=(?:[-*]|\d+\.)\s+)/)
+            .some((s) => !isNoneValue(stripListMarker(s))));
     if (hasFriction) friction++;
-    const entries = hasFriction ? frictionEntries(p.body) : [];
-    const entryTexts = entries.length ? entries : hasFriction ? [fr] : [];
+    const entryTexts = hasFriction ? (entries.length ? entries : [fr]) : [];
     if (entryTexts.length) frictionDetails.push(`${p.data.id || p.base}: ${entryTexts[0].slice(0, 60)}`);
     for (const topic of new Set(entryTexts.map(topicOfFriction))) {
       topicCounts.set(topic, (topicCounts.get(topic) || 0) + 1);
