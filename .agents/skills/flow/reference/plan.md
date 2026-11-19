@@ -169,7 +169,7 @@
 - 入口 `/flow quick`，判定与护栏见 `reference/quick.md`
 - 复用现有 Feature，不新建（无归属才建最小 Feature）；不改其正文
 - **不要求覆盖矩阵**；`covers` 可省略或为空
-- G0 + G1 合并为一次确认；确认后写一页 Plan 并实现
+- G0 + G1 合并为一次确认；确认后写 Plan（必要章节：§1–§5 + §8，不硬压页数）并实现
 - Review 与 standard 一致：默认 checklist
 
 ```markdown
