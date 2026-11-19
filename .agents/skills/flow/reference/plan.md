@@ -264,7 +264,7 @@ review: checklist
 <!-- 仅记录意图：命中高风险路径时强制 checklist；否则按 Review 计数询问/强制（见 reference/review.md） -->
 
 ## 8. 执行结果与偏差（Go 结束时追加，不回改上文）
-<!-- 字段见 go.md：完成 / 偏差 / 遗留 / 基线 / 门禁 / waiver / 工程摩擦（候选 Compound） / 本轮改动文件 / Review 计数 -->
+<!-- 字段见 go.md：完成 / 变更总结（en + type） / 偏差 / 遗留 / 基线 / 门禁 / waiver / 工程摩擦（候选 Compound） / 本轮改动文件 / Review 计数 -->
 
 ## Review 结果（Review 结束时追加）
 

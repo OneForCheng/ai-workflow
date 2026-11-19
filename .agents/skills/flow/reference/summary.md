@@ -12,7 +12,15 @@
 | quick | 一行 G2 回溯之后 | 是 | 用户确认后 |
 | run | 晨报「变更总结」 | 否（无人值守） | 否；任务提交已在 run §5 完成 |
 
-## 2. 生成摘要（Agent 负责语义）
+## 2. 生成摘要（优先复用 Plan §8）
+
+**先尝试复用**：Plan §8 的 `变更总结`（英文 one-liner）与 `type` 是 Go 结束时写好的事后事实。**同时满足**下列条件才直接采用，不再生成：
+
+1. §8 有 `变更总结` 且带 `type`
+2. 本轮 Review 无 P1 修复（Review 改过文件则候选可能过期）
+3. `git status --short` 的每个文件都在 §8「本轮改动文件」中；§8 的非 `docs/` 文件也都出现在 status（被 gitignore 的 docs 不参与比对）
+
+满足 → 跳到 §3 预览 message；否则按下面重新生成。
 
 1. 读**实际改动**：`git status --short`；需要时 `git diff --stat`
    - run 用 `git log <base>..HEAD --oneline` + `git diff <base>...HEAD --stat`
@@ -89,12 +97,13 @@ node .agents/skills/flow/scripts/flow-commit.mjs \
 ## 6. run 的差异
 
 - run 的逐任务 commit 在任务循环中已执行（见 `run.md` §5），使用同一脚本与 message 格式。
-- 晨报「变更总结」给整轮候选，**不再调用非 dry-run 脚本**。
+- 晨报「变更总结」给整轮候选：从**账本任务表 + Plan §4 任务卡**汇总，不重新读整轮 diff。
+- 晨报只出候选，**不再调用非 dry-run 脚本**。
 - 若 run 结束仍有未提交改动（park / 中断），候选只覆盖这些改动，并注明「部分改动未提交」。
 
 ## 7. 硬规则
 
-- 总结必须来自实际 diff；禁止照抄 Plan 或对话里的计划
+- 总结必须来自事实：Plan §8 `变更总结`（满足信任条件）或实际 diff；禁止照抄 P2 方案描述
 - 未确认前不提交（run 的任务提交仅由授权信封放行，不属此列）
 - 不 push / merge / 改历史
 - 提交失败不得删除、重置或 stash 本轮改动

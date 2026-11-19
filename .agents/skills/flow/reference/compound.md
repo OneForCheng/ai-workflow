@@ -151,5 +151,5 @@ disable-model-invocation: true
 - [ ] 落档建议已按优先级罗列；除 Plan 追加外，未在用户同意前写入 standard / ADR / AGENTS / 测试 / lint / skill
 - [ ] 未把变更历史写入 designs/standards；未在可机检时新建重复 prose standard
 - [ ] 未自动安装 skill
-- [ ] 变更总结已基于实际 diff 输出；未在用户确认前提交
+- [ ] 变更总结已基于事实输出（优先 Plan §8，失效时按实际 diff）；未在用户确认前提交
 - [ ] 可选：`node .agents/skills/flow/scripts/flow-check.mjs docs`
