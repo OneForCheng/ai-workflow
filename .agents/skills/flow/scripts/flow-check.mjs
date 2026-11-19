@@ -847,22 +847,41 @@ function fieldAfter(body, prefix) {
   return vals.join(' ');
 }
 
-function frictionEntry(body) {
+/** 摩擦主题词表：首命中生效，other 兜底（顺序即优先级；不做配置，避免分类漂移） */
+const FRICTION_TOPIC_RULES = [
+  ['build', /构建|编译|build|tsc|webpack|vite|安装依赖|依赖安装/i],
+  ['test', /测试|test|coverage|覆盖率|vitest|jest|pytest/i],
+  ['lint', /lint|eslint|prettier|格式化|format|类型检查/i],
+  ['db', /migration|schema|sql|prisma|alembic|表结构|迁移|数据库/i],
+  ['ci', /\bci\b|deploy|pipeline|流水线|github actions/i],
+  ['tooling', /脚本|script|fixtures|checker|命令不可用|命令行|node_modules|npm|pnpm/i],
+  ['docs', /docs\/|文档|索引|readme|\.gitignore|忽略/i],
+];
+
+const topicOfFriction = (entry) => {
+  for (const [topic, re] of FRICTION_TOPIC_RULES) if (re.test(entry)) return topic;
+  return 'other';
+};
+
+/** 读取「工程摩擦」字段下的全部条目（兼容 1. / - / 续行）；第一条用于明细展示 */
+function frictionEntries(body) {
   const prefix = '- 工程摩擦（候选 Compound）';
   const lines = body.split('\n');
   const i = lines.findIndex((l) => l.trim().startsWith(prefix));
-  if (i < 0) return '';
+  if (i < 0) return [];
   const inline = lines[i].trim().slice(prefix.length).replace(/^[：:]\s*/, '').trim();
-  if (inline && !/^无/.test(inline)) return inline;
+  if (inline && !/^无/.test(inline)) return [inline];
+  const entries = [];
   for (let j = i + 1; j < lines.length; j++) {
     const raw = lines[j];
     const t = raw.trim();
     if (!t) continue;
     if (/^- /.test(raw)) break;
     if (/^无/.test(t)) continue;
-    return t;
+    if (/^(?:[-*]|\d+\.)\s+/.test(t)) entries.push(t);
+    else if (entries.length) entries[entries.length - 1] += ` ${t}`;
   }
-  return '';
+  return entries;
 }
 
 function reviewCounts(body) {
@@ -913,6 +932,7 @@ function signalsOf(res) {
   let checklist = 0;
   let skip = 0;
   const frictionDetails = [];
+  const topicCounts = new Map();
   for (const p of windowPlans) {
     const strat = (p.body.match(/^review:\s*(\w+)/m) || [])[1] || 'checklist';
     if (strat === 'skip') skip++;
@@ -921,12 +941,21 @@ function signalsOf(res) {
     p1 += rc.p1;
     p2 += rc.p2;
     const fr = fieldAfter(p.body, '工程摩擦（候选 Compound）');
-    if (fr && !/^无/.test(fr)) friction++;
-    const fe = frictionEntry(p.body);
-    if (fe) frictionDetails.push(`${p.data.id || p.base}: ${fe.slice(0, 60)}`);
+    const hasFriction = Boolean(fr && !/^无/.test(fr));
+    if (hasFriction) friction++;
+    const entries = frictionEntries(p.body);
+    const entryTexts = entries.length ? entries : hasFriction ? [fr] : [];
+    if (entryTexts.length) frictionDetails.push(`${p.data.id || p.base}: ${entryTexts[0].slice(0, 60)}`);
+    for (const topic of new Set(entryTexts.map(topicOfFriction))) {
+      topicCounts.set(topic, (topicCounts.get(topic) || 0) + 1);
+    }
     const wv = fieldAfter(p.body, 'waiver');
     if (wv && !/^无/.test(wv)) waiver++;
   }
+  const frictionTopics = [...topicCounts.entries()].sort(
+    (a, b) => b[1] - a[1] || a[0].localeCompare(b[0]),
+  );
+  const frictionRepeat = frictionTopics.filter(([, n]) => n >= 2).length;
 
   let open = 0;
   const latestRetro = retros.length ? retros[retros.length - 1] : null;
@@ -990,6 +1019,7 @@ function signalsOf(res) {
   return {
     plans: plans.length, tiers, rounds, p1, p2, friction, waiver, checklist, skip,
     open, runs, parked, decisions, hasFlow, lastRetroDate, frictionDetails: frictionDetails.slice(0, 5),
+    frictionTopics, frictionRepeat,
     due: reasons.length > 0, reasons,
   };
 }
@@ -1003,6 +1033,7 @@ function renderSignals(sig) {
     `- Review（窗口内）：checklist ${sig.checklist} / skip ${sig.skip}；P1 ${sig.p1} / P2 ${sig.p2}`,
     `- 工程摩擦（窗口内）：${sig.friction} 个 Plan 有记账；waiver：${sig.waiver}`,
     ...(sig.frictionDetails.length ? ['- 摩擦明细（前 5）：', ...sig.frictionDetails.map((d) => `  - ${d}`)] : []),
+    `- 摩擦主题：${sig.frictionTopics.length ? sig.frictionTopics.map(([t, n]) => `${t} ${n}`).join(' / ') : '无'}（friction_repeat=${sig.frictionRepeat}）`,
     `- 运行：parked ${sig.parked} / decision_auto ${sig.decisions}`,
     `- 未结实验：${sig.open}`,
     `- 触发：due: ${sig.due ? 'yes' : 'no'}${sig.due ? `（${sig.reasons.join('、')}）` : ''}`,
@@ -1011,7 +1042,7 @@ function renderSignals(sig) {
 }
 
 function renderBrief(sig) {
-  return `due: ${sig.due ? 'yes' : 'no'} | rounds=${sig.rounds} | p1=${sig.p1} | friction=${sig.friction} | parks=${sig.parked} | source=${sig.hasFlow ? 'flow+docs' : 'docs'}`;
+  return `due: ${sig.due ? 'yes' : 'no'} | rounds=${sig.rounds} | p1=${sig.p1} | friction=${sig.friction} | friction_repeat=${sig.frictionRepeat} | parks=${sig.parked} | source=${sig.hasFlow ? 'flow+docs' : 'docs'}`;
 }
 
 function buildMap(res) {
