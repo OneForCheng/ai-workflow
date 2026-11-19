@@ -842,25 +842,26 @@ function fieldAfter(body, prefix) {
     const t = raw.trim();
     if (!t) continue;
     if (/^- /.test(raw)) break; // 下一个顶层字段
+    if (/^#{1,6}\s/.test(t)) break; // 下一节标题
     vals.push(t);
   }
   return vals.join(' ');
 }
 
-/** 「无」判定：只认独立值（`无` / `无 / …` / `无（…）`），避免「无法…」被误判 */
-const NONE_VALUE_RE = /^无(?=$|[\s/（(、,，.。;；])/;
+/** 「无」判定：只认独立值（`无` / `无 / …` / `无（…）` / `无｜…`），避免「无法…」被误判 */
+const NONE_VALUE_RE = /^无(?=$|[\s/（(、,，.。;；｜|])/;
 
 const isNoneValue = (v) => NONE_VALUE_RE.test(String(v).trim());
 
-/** 摩擦主题词表：首命中生效，other 兜底（顺序即优先级；英文加词边界，避免 latest→test） */
+/** 摩擦主题词表：首命中生效，other 兜底（顺序即优先级；英文加词边界与常见复数） */
 const FRICTION_TOPIC_RULES = [
-  ['build', /构建|编译|\bbuild\b|\btsc\b|\bwebpack\b|\bvite\b|安装依赖|依赖安装/i],
-  ['test', /测试|\btest\b|\bcoverage\b|覆盖率|\bvitest\b|\bjest\b|\bpytest\b/i],
+  ['build', /构建|编译|\bbuilds?\b|\btsc\b|\bwebpack\b|\bvite\b|安装依赖|依赖安装/i],
+  ['test', /测试|\btests?\b|\bcoverage\b|覆盖率|\bvitest\b|\bjest\b|\bpytest\b/i],
   ['lint', /\blint\b|\beslint\b|\bprettier\b|格式化|\bformat\b|类型检查/i],
-  ['db', /\bmigration\b|\bschema\b|\bsql\b|\bprisma\b|\balembic\b|表结构|迁移|数据库/i],
-  ['ci', /\bci\b|\bdeploy\b|\bpipeline\b|流水线|\bgithub actions\b/i],
-  ['tooling', /脚本|\bscript\b|\bfixtures?\b|\bchecker\b|命令不可用|命令行|\bnode_modules\b|\bnpm\b|\bpnpm\b/i],
-  ['docs', /docs\/|\bdocs\b|文档|索引|\breadme\b|\.gitignore|忽略(?:文档|目录|入库)/i],
+  ['db', /\bmigrations?\b|\bschema\b|\bsql\b|\bprisma\b|\balembic\b|表结构|迁移|数据库/i],
+  ['ci', /\bci\b|\bdeploys?\b|\bpipelines?\b|流水线|\bgithub actions\b/i],
+  ['tooling', /脚本|\bscripts?\b|\bfixtures?\b|\bchecker\b|命令不可用|命令行|\bnode_modules\b|\bnpm\b|\bpnpm\b/i],
+  ['docs', /docs\/|\bdocs?\b|文档|索引|\breadme\b|\.gitignore|忽略(?:文档|目录|入库)/i],
 ];
 
 /** 只对「现象」部分归类：`｜`/`|` 之后是修复命令/复检时点，不参与主题判定 */
@@ -887,7 +888,7 @@ function frictionEntries(body) {
     const sub = t.match(/^(?:[-*]|\d+\.)\s+(.*)$/);
     if (sub && !/^(?:修复命令|复检时点)[：:]/.test(sub[1])) {
       if (/^- /.test(raw)) break; // 下一个顶层字段
-      if (isNoneValue(t)) continue;
+      if (isNoneValue(sub[1])) continue; // 列表标记后的「无」不算摩擦
       entries.push(t);
       continue;
     }
@@ -909,7 +910,7 @@ function reviewCounts(body) {
     const m = line.match(/^- (P[12])：\s*(.*)$/);
     if (!m) continue;
     const v = m[2].trim();
-    if (v && !isNoneValue(v)) {
+    if (v && !/^无/.test(v)) {
       if (m[1] === 'P1') p1++;
       else p2++;
     }
@@ -958,15 +959,16 @@ function signalsOf(res) {
     p1 += rc.p1;
     p2 += rc.p2;
     const fr = fieldAfter(p.body, '工程摩擦（候选 Compound）');
-    const entries = frictionEntries(p.body);
-    const entryTexts = entries.length ? entries : fr && !isNoneValue(fr) ? [fr] : [];
-    if (entryTexts.length) friction++;
+    const hasFriction = Boolean(fr && !isNoneValue(fr));
+    if (hasFriction) friction++;
+    const entries = hasFriction ? frictionEntries(p.body) : [];
+    const entryTexts = entries.length ? entries : hasFriction ? [fr] : [];
     if (entryTexts.length) frictionDetails.push(`${p.data.id || p.base}: ${entryTexts[0].slice(0, 60)}`);
     for (const topic of new Set(entryTexts.map(topicOfFriction))) {
       topicCounts.set(topic, (topicCounts.get(topic) || 0) + 1);
     }
     const wv = fieldAfter(p.body, 'waiver');
-    if (wv && !isNoneValue(wv)) waiver++;
+    if (wv && !/^无/.test(wv)) waiver++;
   }
   const frictionTopics = [...topicCounts.entries()].sort(
     (a, b) => b[1] - a[1] || a[0].localeCompare(b[0]),
@@ -1187,7 +1189,10 @@ function main() {
   if (freezeId) handleFreeze(res, freezeId);
 
   console.log(render(res, { map: flags.has('--map') }));
-  if (sig) console.log(flags.has('--brief') ? renderBrief(sig) : renderSignals(sig));
+  if (sig) {
+    if (flags.has('--signals')) console.log(renderSignals(sig));
+    if (flags.has('--brief')) console.log(renderBrief(sig));
+  }
   if (res.errors.length) process.exitCode = 1;
 }
 
