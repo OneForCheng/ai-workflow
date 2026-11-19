@@ -337,7 +337,7 @@ function resolveContext(opts, env) {
 }
 
 function collectRepo(repo, opts, env) {
-  const status = gitOk(['status', '--short'], repo.root, env);
+  const status = gitOk(['status', '--porcelain', '-uall'], repo.root, env);
   if (!status.ok) throw new CliError(`git status 失败（${repo.name}）：${status.err}`, EXIT.git);
   const files = status.out ? status.out.split('\n').filter(Boolean) : [];
   let user = '';
@@ -699,11 +699,14 @@ function selfTest() {
     let result = runCommit({ cwd: dir, type: 'feat', summary: 'clean worktree', env });
     assert(result.code === EXIT.nothing, '干净工作区应返回 2');
     makeDirty(dir, 'a.txt');
+    mkdirSync(join(dir, 'nested'));
+    writeFileSync(join(dir, 'nested', 'deep.txt'), 'deep');
     result = runCommit({ cwd: dir, type: 'feat', summary: 'add flow summary', env, dryRun: true });
     assert(
       result.message === '[Test User] #PP-456 feat: add flow summary',
       `卡号推断或 message 组装错误：${result.message}`,
     );
+    assert(result.files.length === 2, `未跟踪目录内的文件应逐个计数：${result.files.length}`);
     assert(result.commit === null && isDirty(dir, env), 'dry-run 不应提交或暂存');
     passed.push('single repo dry-run');
 

@@ -29,5 +29,6 @@ coverage
 
 *.tsbuildinfo
 .tsconfig.check.*.json
-docs/
+# 仅忽略根目录 docs；fixture 下的 docs 是测试数据，必须入库
+/docs/
 idea
