@@ -24,6 +24,7 @@
  *   8. anchors（design/standard）：项目根相对路径或 glob，须命中真实文件；可出覆盖视图
  *   9. frozen（feature）：需求块哈希，防止已确认 Feature 正文被就地改写
  *  10. Plan 已有非空 §8 但 status 仍为 draft/active → WARN（--strict 升级为 ERROR）
+ *  11. Feature AC/status/frozen 漂移 → WARN（--strict 升级为 ERROR）
  */
 import { existsSync, lstatSync, readFileSync, readdirSync, realpathSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
@@ -394,6 +395,7 @@ function checkDocs(docsDir, opts = {}) {
 
   // Plan §8 已写 / status 漂移（draft·active → 期望 done）
   checkPlanStatusDrift(res, opts);
+  checkFeatureStatusDrift(res, opts);
 
   // plan.feature 引用完整性
   for (const d of res.docs) {
@@ -560,6 +562,34 @@ function checkHandwrittenMessages(res) {
         );
         break;
       }
+    }
+  }
+}
+
+/** Feature 状态漂移：全部 AC 已勾但 status 非 done / done 缺 frozen / done 有未勾 AC */
+function checkFeatureStatusDrift(res, opts = {}) {
+  for (const feat of res.docs.filter((d) => d.type === 'feature')) {
+    if (feat.data.status === 'deprecated') continue;
+    const section = sectionOf(feat.body, '验收标准');
+    const acs = [...section.matchAll(/^-\s*\[([ xX])\]\s*(AC-\d+)/gm)];
+    if (acs.length === 0) continue;
+    const total = acs.length;
+    const checked = acs.filter((m) => m[1].toLowerCase() === 'x').length;
+    const status = feat.data.status;
+    const messages = [];
+    if (['draft', 'active'].includes(status) && checked === total) {
+      messages.push(`全部 AC 已完成但 status 仍为 ${status}`);
+    }
+    if (status === 'done' && checked < total) {
+      messages.push(`status=done 但有 ${total - checked}/${total} 条 AC 未勾选`);
+    }
+    if (status === 'done' && !feat.data.frozen) {
+      messages.push('status=done 但缺少 frozen');
+    }
+    for (const msg of messages) {
+      const full = `${msg}：${shown(res, feat.rDocs)}；请收尾为 done + frozen 或注明原因`;
+      if (opts.strict) err(res, `${full}（--strict）`);
+      else warn(res, full);
     }
   }
 }

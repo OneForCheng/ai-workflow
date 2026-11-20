@@ -6,7 +6,8 @@ status: done
 scope: [skills, auto, routing]
 owner: BA
 source: 对话
-updated: 2026-10-30
+updated: 2026-11-20
+frozen: 4cd0b5b558b7
 ---
 
 # FEAT-001 auto 统一入口 skill

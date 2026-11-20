@@ -49,7 +49,7 @@ npx skills add . -l            # 列出可发现的 skill（不安装）
 npx skills add . -g -y         # 本地安装到全局（开发自测）
 npx skills update -g           # 更新已安装的全局 skill
 node .agents/skills/flow/scripts/flow-check.mjs docs            # 结构校验
-node .agents/skills/flow/scripts/flow-check.mjs docs --strict   # 可判定 WARN 升级为 error（如 Plan §8 已写但 status 非 done）
+node .agents/skills/flow/scripts/flow-check.mjs docs --strict   # 可判定 WARN 升级为 error（Plan / Feature 状态漂移）
 node .agents/skills/flow/scripts/flow-check.mjs docs --trace    # AC↔Task 矩阵校验
 node .agents/skills/flow/scripts/flow-check.mjs docs --map      # 目录覆盖视图（anchors）
 node .agents/skills/flow/scripts/flow-check.mjs docs --gates    # 质量门契约校验

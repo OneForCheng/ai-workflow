@@ -2,11 +2,12 @@
 id: FEAT-003
 title: quick 档：小改动的最小闭环
 doc_type: feature
-status: active
+status: done
 scope: [workflow, quick, review]
 owner: BA
 source: 对话
-updated: 2026-11-16
+updated: 2026-11-20
+frozen: 73a0c8e803b7
 ---
 
 # FEAT-003 quick 档：小改动的最小闭环

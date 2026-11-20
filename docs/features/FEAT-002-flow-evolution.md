@@ -2,11 +2,12 @@
 id: FEAT-002
 title: 工作流演进：可判定 · 可续跑 · 可 retro
 doc_type: feature
-status: active
+status: done
 scope: [workflow, skills, docs, quality-gates, loop, retro]
 owner: BA
 source: 对话 + idea/简单聊聊一些新的 AI 编程实践.pdf
-updated: 2026-11-19
+updated: 2026-11-20
+frozen: f095afc3dc6d
 ---
 
 # FEAT-002 工作流演进：可判定 · 可续跑 · 可 retro
@@ -50,8 +51,8 @@ updated: 2026-11-19
 - [x] AC-7：全部约定以项目根相对路径表述，`docsDir` 可参数化，可在任意工作目录/仓库运行
 - [x] AC-8（P1）：异步 run 支持授权信封、决策等待窗口、账本续跑、park 不阻塞队列、晨报输出
 - [x] AC-9（P1）：`.flow/` 按「显式参数 > 环境变量 > `docs/` 同级 > 向上查找 > git root > cwd」定位，默认与 `docs/` 同级（工作区根）；workspace 模式记录任务所属 repo；不在 git 内时标记未跟踪；内部分层为「结论层（`state.json`、retro 记录）可跟踪 / 证据层（`runs/`、`signals.jsonl`）默认本地」，证据缺失时 retro 须显式标注并降级结论
-- [ ] AC-10（P2）：`/retro` 支持轮次计数、信号阈值、手动三种触发；只读聚合信号，产出 ≤3 条可结算实验
-- [ ] AC-11（P2）：retro 对 skill 的改动只输出建议 diff，须用户明确确认后才可合入
+- [x] AC-10（P2）：`/retro` 支持轮次计数、信号阈值、手动三种触发；只读聚合信号，产出 ≤3 条可结算实验
+- [x] AC-11（P2）：retro 对 skill 的改动只输出建议 diff，须用户明确确认后才可合入
 
 ## 验收结果
 
@@ -65,12 +66,13 @@ updated: 2026-11-19
 - AC-8：run 协议落地（`reference/run.md`），含 pre-flight、A0–A4 信封、W 三种取值、任务循环、park、账本与晨报；补充 `--dry-run` 只读排演（G1 前验证任务可执行性）；`--state` 可校验
 - 补充：`/flow run` 在 `SKILL.md` 阶段 0 显式分发（step 0b），不再依赖模型从使用边界表推断
 - AC-9：`.flow/` 定位（含 `docs/` 同级）与 repo/workspace/tracked 分层落地；`state-ok` / `state-invalid` 样本通过
-- AC-10、AC-11：未开始（P2 retro）
+- AC-10、AC-11：由 FEAT-004 交付（`/retro` skill、信号聚合、实验与 upstream 建议；`RETRO-20261117` 已结算）
 
 ## 关联
 
 - 前置 Feature：无（在 FEAT-001 路由体系之上演进）
 - Plans：PLAN-20261116-flow-verifiability（P0）、PLAN-20261116-flow-run-protocol（P1）
 - Designs：DES-arch-flow-contracts
-- 后继 Feature：FEAT-005（收尾变更总结与提交助手）
+- 后继 Feature：FEAT-004（P2 retro）、FEAT-005（收尾变更总结与提交助手）
 - 修补：PLAN-20261119-plan-status-check（checker：Plan §8/status 漂移 WARN + Go 清单补 status→done）
+- 修补：PLAN-20261120-feature-status-check（checker：Feature AC/status/frozen 漂移 WARN + 存量收尾）

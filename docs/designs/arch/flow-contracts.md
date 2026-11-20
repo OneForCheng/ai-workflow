@@ -6,7 +6,7 @@ status: current
 domain: arch
 scope: [workflow, docs, quality-gates, review]
 anchors: [.agents/skills/flow/**]
-updated: 2026-11-19
+updated: 2026-11-20
 ---
 
 # 流程契约（证据与判定）
@@ -93,9 +93,9 @@ updated: 2026-11-19
 
 | 子命令 | 作用 | 是否影响退出码 |
 |--------|------|----------------|
-| 无参数 | 结构校验（五目录、front-matter、ID、索引双向、冻结哈希、Plan §8/status 漂移 WARN） | 是 |
+| 无参数 | 结构校验（五目录、front-matter、ID、索引双向、冻结哈希、Plan §8/status 与 Feature AC/status/frozen 漂移 WARN） | 是 |
 | `--map` | 目录覆盖视图 | 否（仅展示） |
-| `--strict` | 把可判定的 WARN 升级为 error（当前：Plan 已有非空 §8 但 `status` 仍为 `draft`/`active`） | 是 |
+| `--strict` | 把可判定的 WARN 升级为 error（Plan §8/status 漂移、Feature AC/status/frozen 漂移） | 是 |
 | `--trace` | Plan 覆盖矩阵校验 + 手填用户名 WARN | 是 |
 | `--gates` | 质量门契约结构校验 | 是 |
 | `--state` | `.flow/` 状态、账本、成员仓清单校验 | 是 |
@@ -106,5 +106,6 @@ updated: 2026-11-19
 
 - **组合输出**：`--signals --brief` 同时输出信号摘要与 brief 行（顺序 signals → brief）；单用 `--brief` 仅一行
 - **Plan 漂移**：Plan 的 `## 8. 执行结果与偏差`（兼容无编号写法）去 HTML 注释、标题与表格分隔行后仍有正文，而 `status` 仍为 `draft`/`active` → WARN；`--strict` 升级为 error。确需保持 `active`（未完成 / 多轮）时应在 §8 注明遗留
+- **Feature 漂移**：全部 AC 已勾但 `status` 仍为 `draft`/`active`、`status=done` 但有未勾 AC、或 `status=done` 缺 `frozen` → WARN；`--strict` 升级为 error
 - **摩擦主题**：按固定词表（`build` / `test` / `lint` / `db` / `ci` / `tooling` / `docs`，`other` 兜底）归类「现象」部分（首个 `｜`/`|` 之前）；`friction_repeat` = 窗口内出现在 ≥2 个 Plan 的 topic 数（同 Plan 去重）。`friction` 总数仍按字段值是否非「无」判定（与既有口径一致；字段值为「无」时忽略其下列表项），waiver 与 Review 判定不变
 - 所有子命令只读，不修改文件。

@@ -2,11 +2,12 @@
 id: FEAT-004
 title: 跨轮 retro 与信号闭环（含 dry-run 状态修正）
 doc_type: feature
-status: active
+status: done
 scope: [workflow, retro, signals, state]
 owner: BA
 source: 对话 + 真跑反馈（myschneider quick / psh dry-run）
-updated: 2026-11-17
+updated: 2026-11-20
+frozen: c3766cbd26bc
 ---
 
 # FEAT-004 跨轮 retro 与信号闭环（含 dry-run 状态修正）
