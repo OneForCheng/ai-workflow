@@ -127,4 +127,6 @@ npx skills update rdd -g
 
 ## License
 
-按仓库声明使用；贡献与 Issue 欢迎提交到 [OneForCheng/ai-workflow](https://github.com/OneForCheng/ai-workflow)。
+本项目基于 [MIT License](LICENSE) 开源。
+
+贡献与 Issue 欢迎提交到 [OneForCheng/ai-workflow](https://github.com/OneForCheng/ai-workflow)。
