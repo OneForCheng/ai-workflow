@@ -8,6 +8,7 @@
  *   node flow-check.mjs [docsDir] --trace         结构校验 + Plan AC↔Task 矩阵校验
  *   node flow-check.mjs [docsDir] --gates         结构校验 + 质量门契约校验
  *   node flow-check.mjs [docsDir] --strict        结构校验 + 把可判定的 WARN 升级为 error
+ *   node flow-check.mjs [docsDir] --signals [--detail]  跨轮信号摘要（--detail 输出全部摩擦明细）
  *   node flow-check.mjs [docsDir] --freeze <id>   打印 Feature 需求块哈希（只读）
  *   node flow-check.mjs --fixtures                运行自测样本（scripts/fixtures）
  *
@@ -888,18 +889,24 @@ const stripListMarker = (s) => String(s).trim().replace(/^(?:[-*]|\d+\.)\s+/, ''
 
 /** 摩擦主题词表：首命中生效，other 兜底（顺序即优先级；英文加词边界与常见复数） */
 const FRICTION_TOPIC_RULES = [
+  ['env', /沙箱|权限|\bpermission\b|operation not permitted|\beacces\b|git 元数据|\bnvm\b/i],
+  ['ui', /\bplaywright\b|截图|视觉基线|ui 基线/i],
+  ['gate', /checkstyle|权威门禁|权威档|长期红|门禁长期/i],
   ['build', /构建|编译|\bbuilds?\b|\btsc\b|\bwebpack\b|\bvite\b|安装依赖|依赖安装/i],
   ['test', /测试|\btests?\b|\bcoverage\b|覆盖率|\bvitest\b|\bjest\b|\bpytest\b/i],
   ['lint', /\blint\b|\beslint\b|\bprettier\b|格式化|\bformat\b|类型检查/i],
-  ['db', /\bmigrations?\b|\bschema\b|\bsql\b|\bprisma\b|\balembic\b|表结构|迁移|数据库/i],
+  ['db', /\bmigrations?\b|\bschema\b|\bsql\b|\bprisma\b|\balembic\b|\bflyway\b|表结构|迁移|数据库/i],
   ['ci', /\bci\b|\bdeploys?\b|\bpipelines?\b|流水线|\bgithub actions\b/i],
   ['tooling', /脚本|\bscripts?\b|\bfixtures?\b|\bchecker\b|命令不可用|命令行|\bnode_modules\b|\bnpm\b|\bpnpm\b/i],
   ['docs', /docs\/|\bdocs?\b|文档|索引|\breadme\b|\.gitignore|忽略(?:文档|目录|入库)/i],
 ];
 
+/** 分类前剥离反引号代码段，避免命令/脚本名（如 `affected-tests.sh`）劫持主题 */
+const stripInlineCode = (s) => s.replace(/`[^`]*`/g, ' ');
+
 /** 只对「现象」部分归类：`｜`/`|` 之后是修复命令/复检时点，不参与主题判定 */
 const topicOfFriction = (entry) => {
-  const phenomenon = entry.split(/[｜|]/)[0].trim();
+  const phenomenon = stripInlineCode(entry.split(/[｜|]/)[0]).trim();
   for (const [topic, re] of FRICTION_TOPIC_RULES) if (re.test(phenomenon)) return topic;
   return 'other';
 };
@@ -990,9 +997,17 @@ function signalsOf(res) {
   let waiver = 0;
   let checklist = 0;
   let skip = 0;
-  const frictionDetails = [];
+  const detailAll = [];
   const topicCounts = new Map();
-  for (const p of windowPlans) {
+  const orderedPlans = [...windowPlans].sort((a, b) => {
+    const ca = String(a.data.created || '');
+    const cb = String(b.data.created || '');
+    return (
+      ca.localeCompare(cb) ||
+      String(a.data.id || a.base).localeCompare(String(b.data.id || b.base))
+    );
+  });
+  for (const p of orderedPlans) {
     const strat = (p.body.match(/^review:\s*(\w+)/m) || [])[1] || 'checklist';
     if (strat === 'skip') skip++;
     else checklist++;
@@ -1012,7 +1027,7 @@ function signalsOf(res) {
             .some((s) => !isNoneValue(stripListMarker(s))));
     if (hasFriction) friction++;
     const entryTexts = hasFriction ? (entries.length ? entries : [fr]) : [];
-    if (entryTexts.length) frictionDetails.push(`${p.data.id || p.base}: ${entryTexts[0].slice(0, 60)}`);
+    for (const entry of entryTexts) detailAll.push(`${p.data.id || p.base}: ${entry.slice(0, 80)}`);
     for (const topic of new Set(entryTexts.map(topicOfFriction))) {
       topicCounts.set(topic, (topicCounts.get(topic) || 0) + 1);
     }
@@ -1023,6 +1038,8 @@ function signalsOf(res) {
     (a, b) => b[1] - a[1] || a[0].localeCompare(b[0]),
   );
   const frictionRepeat = frictionTopics.filter(([, n]) => n >= 2).length;
+  const frictionDetailsAll = detailAll;
+  const frictionDetails = frictionDetailsAll.slice(-5).map((d) => d.slice(0, 60));
 
   let open = 0;
   const latestRetro = retros.length ? retros[retros.length - 1] : null;
@@ -1085,21 +1102,23 @@ function signalsOf(res) {
   if (parked >= 3) reasons.push('park≥3');
   return {
     plans: plans.length, tiers, rounds, p1, p2, friction, waiver, checklist, skip,
-    open, runs, parked, decisions, hasFlow, lastRetroDate, frictionDetails: frictionDetails.slice(0, 5),
+    open, runs, parked, decisions, hasFlow, lastRetroDate, frictionDetails, frictionDetailsAll,
     frictionTopics, frictionRepeat,
     due: reasons.length > 0, reasons,
   };
 }
 
-function renderSignals(sig) {
+function renderSignals(sig, opts = {}) {
   const source = sig.hasFlow ? `docs + .flow（${sig.runs} 个账本）` : 'docs（降级：无 .flow）';
+  const details = opts.detail ? sig.frictionDetailsAll : sig.frictionDetails;
+  const detailLabel = opts.detail ? `摩擦明细（全部 ${details.length} 条）` : '摩擦明细（最近 5 条）';
   return [
     '## 信号摘要（--signals）',
     `- 数据源：${source}`,
     `- 轮次：共 ${sig.plans} 个 Plan（standard ${sig.tiers.standard} / quick ${sig.tiers.quick}），自上次 retro ${sig.rounds}${sig.lastRetroDate ? `（上次 ${sig.lastRetroDate}）` : ''}`,
     `- Review（窗口内）：checklist ${sig.checklist} / skip ${sig.skip}；P1 ${sig.p1} / P2 ${sig.p2}`,
     `- 工程摩擦（窗口内）：${sig.friction} 个 Plan 有记账；waiver：${sig.waiver}`,
-    ...(sig.frictionDetails.length ? ['- 摩擦明细（前 5）：', ...sig.frictionDetails.map((d) => `  - ${d}`)] : []),
+    ...(details.length ? [`- ${detailLabel}：`, ...details.map((d) => `  - ${d}`)] : []),
     `- 摩擦主题：${sig.frictionTopics.length ? sig.frictionTopics.map(([t, n]) => `${t} ${n}`).join(' / ') : '无'}（friction_repeat=${sig.frictionRepeat}）`,
     `- 运行：parked ${sig.parked} / decision_auto ${sig.decisions}`,
     `- 未结实验：${sig.open}`,
@@ -1200,9 +1219,11 @@ function runFixtures() {
     if (flags.has('gates')) checkGates(res);
     if (flags.has('state')) checkState(res);
     let text = render(res, {});
-    const wantSignals = flags.has('signals') || flags.has('brief');
+    const wantSignals = flags.has('signals') || flags.has('brief') || flags.has('detail');
     const sig = wantSignals ? signalsOf(res) : null;
-    if (sig && flags.has('signals')) text += '\n' + renderSignals(sig);
+    if (sig && (flags.has('signals') || flags.has('detail'))) {
+      text += '\n' + renderSignals(sig, { detail: flags.has('detail') });
+    }
     if (sig && flags.has('brief')) text += '\n' + renderBrief(sig);
     const code = res.errors.length ? 1 : 0;
     const docsShown = toPosix(res.docsDir);
@@ -1234,12 +1255,13 @@ function main() {
   if (flags.has('--trace')) checkTrace(res);
   if (flags.has('--gates')) checkGates(res);
   if (flags.has('--state')) checkState(res);
-  const sig = flags.has('--signals') || flags.has('--brief') ? signalsOf(res) : null;
+  const showSignals = flags.has('--signals') || flags.has('--detail');
+  const sig = showSignals || flags.has('--brief') ? signalsOf(res) : null;
   if (freezeId) handleFreeze(res, freezeId);
 
   console.log(render(res, { map: flags.has('--map') }));
   if (sig) {
-    if (flags.has('--signals')) console.log(renderSignals(sig));
+    if (sig && showSignals) console.log(renderSignals(sig, { detail: flags.has('--detail') }));
     if (flags.has('--brief')) console.log(renderBrief(sig));
   }
   if (res.errors.length) process.exitCode = 1;

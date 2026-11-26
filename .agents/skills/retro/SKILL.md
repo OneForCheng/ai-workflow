@@ -25,12 +25,12 @@ disable-model-invocation: true
 
 - 定位仓库根：`docs/` 同级优先，其次 git root，最后 cwd
 - 读 `AGENTS.md`（若有）与 `docs/*/README.md` 索引；**不读历史 Plan 正文**
-- 聚合命令：`node .agents/skills/flow/scripts/flow-check.mjs docs --signals`（无 `.flow` 会自动降级并标注）
+- 聚合命令：`node .agents/skills/flow/scripts/flow-check.mjs docs --signals`（需要全部摩擦明细时加 `--detail`；无 `.flow` 会自动降级并标注）
 
 ## 五步
 
 1. **定位**：仓库根、`docs/`、`.flow/`、上一次 `docs/others/retro/` 记录
-2. **聚合**：跑 `--signals`，得到轮次 / tier / Review / 摩擦 / waiver / park / decision / 未结实验
+2. **聚合**：跑 `--signals`（`--detail` 拿全量摩擦明细），得到轮次 / tier / Review / 摩擦 / waiver / park / decision / 未结实验
 3. **结算**：逐条判定上一轮实验——`兑现` / `无效` / `证据不足`（无数据就写证据不足，不猜）
 4. **产出**：≤3 条新实验，每条含假设、指标、窗口（≤5 轮）、回滚条件
 5. **落档 + 交回**：写 `docs/others/retro/RETRO-<YYYYMMDD>.md` + 索引；对话输出 upstream 块

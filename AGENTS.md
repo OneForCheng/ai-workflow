@@ -55,6 +55,7 @@ node .agents/skills/flow/scripts/flow-check.mjs docs --map      # 目录覆盖�
 node .agents/skills/flow/scripts/flow-check.mjs docs --gates    # 质量门契约校验
 node .agents/skills/flow/scripts/flow-check.mjs docs --state    # .flow/ 运行状态校验
 node .agents/skills/flow/scripts/flow-check.mjs docs --signals  # 跨轮信号摘要
+node .agents/skills/flow/scripts/flow-check.mjs docs --signals --detail  # 信号摘要 + 全部摩擦明细
 node .agents/skills/flow/scripts/flow-check.mjs docs --brief    # 是否该 retro（due: yes|no）
 node .agents/skills/flow/scripts/flow-check.mjs --fixtures      # checker 自测（全部通过）
 node .agents/skills/flow/scripts/flow-commit.mjs --self-test    # 提交脚本自测（临时仓库）
