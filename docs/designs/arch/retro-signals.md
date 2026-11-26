@@ -33,7 +33,7 @@ updated: 2026-11-19
 
 - 轮次：Plan 总数、`tier` 分布、距上次 retro 的 Plan 数（优先用 RETRO 的 `plans_total` 快照差，缺失时按日期兜底）
 - Review：checklist / skip 数，P1 / P2 数
-- 工程摩擦与 waiver 的 Plan 数；摩擦主题计数（`env` / `ui` / `gate` / `build` / `test` / `lint` / `db` / `ci` / `tooling` / `docs` / `other`，先剥离反引号、同 Plan 去重）与 `friction_repeat`（窗口内出现在 ≥2 个 Plan 的 topic 数）；摩擦明细默认最近 5 条，`--detail` 输出全部条目（每条 80 字）
+- 工程摩擦与 waiver 的 Plan 数；摩擦主题计数（`env` / `ui` / `gate` / `build` / `test` / `lint` / `db` / `ci` / `tooling` / `docs` / `other`，先剥离反引号、同 Plan 去重）与 `friction_repeat`（窗口内出现在 ≥2 个 Plan 的 topic 数）；摩擦明细默认最多 5 条（实际条数见标题；每条 80 字），`--detail` 输出全部条目（每条 80 字）
 - 运行：parked、`decision_auto`（仅 `.flow`）
 - 未结实验数（来自 `docs/others/retro` 的「状态」列）
 - 触发结论 `due: yes|no` 与理由

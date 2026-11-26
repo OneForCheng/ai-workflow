@@ -159,7 +159,7 @@ function parseIndex(abs) {
 
 /** 递归列出文件；跳过重目录与符号链接（避免环） */
 function walkAll(dir, out = []) {
-  for (const name of readdirSync(dir)) {
+  for (const name of readdirSync(dir).sort()) {
     if (HEAVY.has(name)) continue;
     const abs = join(dir, name);
     let st;
@@ -890,7 +890,7 @@ const stripListMarker = (s) => String(s).trim().replace(/^(?:[-*]|\d+\.)\s+/, ''
 /** 摩擦主题词表：首命中生效，other 兜底（顺序即优先级；英文加词边界与常见复数） */
 const FRICTION_TOPIC_RULES = [
   ['env', /沙箱|权限|\bpermission\b|operation not permitted|\beacces\b|git 元数据|\bnvm\b/i],
-  ['ui', /\bplaywright\b|截图|视觉基线|ui 基线/i],
+  ['ui', /\bplaywright\b|截图|视觉基线|ui\s*基线|基线(?:漂移|过期|失败|差异)/i],
   ['gate', /checkstyle|权威门禁|权威档|长期红|门禁长期/i],
   ['build', /构建|编译|\bbuilds?\b|\btsc\b|\bwebpack\b|\bvite\b|安装依赖|依赖安装/i],
   ['test', /测试|\btests?\b|\bcoverage\b|覆盖率|\bvitest\b|\bjest\b|\bpytest\b/i],
@@ -921,7 +921,10 @@ function frictionField(body) {
   return { lines, i, inline };
 }
 
-/** 读取「工程摩擦」字段下的全部条目（兼容 1. / - / 续行）；第一条用于明细展示 */
+/** 子字段（落点 / 修复命令 / 复检时点）识别，拆行书写时并回上一条 */
+const SUB_FIELD_RE = /^(?:落点|修复命令|复检时点)[：:]/;
+
+/** 读取「工程摩擦」字段下的全部条目（兼容 1. / - / 续行）；全部条目用于明细 */
 function frictionEntries(body) {
   const field = frictionField(body);
   if (!field) return [];
@@ -934,15 +937,19 @@ function frictionEntries(body) {
     if (!t) continue;
     if (/^#{1,6}\s/.test(t)) break; // 下一节标题
     const sub = t.match(/^(?:[-*]|\d+\.)\s+(.*)$/);
-    if (sub && !/^(?:修复命令|复检时点)[：:]/.test(sub[1])) {
+    if (sub) {
+      if (SUB_FIELD_RE.test(sub[1])) {
+        // 拆分书写的子字段：并回上一条，不单独计为摩擦
+        if (entries.length) entries[entries.length - 1] += ` ｜ ${sub[1].trim()}`;
+        continue;
+      }
       if (/^- /.test(raw)) break; // 下一个顶层字段
       if (isNoneValue(sub[1])) continue; // 列表标记后的「无」不算摩擦
       entries.push(t);
       continue;
     }
-    if (sub && entries.length) {
-      // 拆分书写的子字段：并回上一条，不单独计为摩擦
-      entries[entries.length - 1] += ` ｜ ${sub[1].trim()}`;
+    if (SUB_FIELD_RE.test(t)) {
+      if (entries.length) entries[entries.length - 1] += ` ｜ ${t}`;
       continue;
     }
     if (entries.length) entries[entries.length - 1] += ` ${t}`;
@@ -999,11 +1006,13 @@ function signalsOf(res) {
   let skip = 0;
   const detailAll = [];
   const topicCounts = new Map();
+  const planKey = (p) => {
+    const created = String(p.data.created || '').replace(/-/g, '');
+    return created || String(p.data.id || p.base);
+  };
   const orderedPlans = [...windowPlans].sort((a, b) => {
-    const ca = String(a.data.created || '');
-    const cb = String(b.data.created || '');
     return (
-      ca.localeCompare(cb) ||
+      planKey(a).localeCompare(planKey(b)) ||
       String(a.data.id || a.base).localeCompare(String(b.data.id || b.base))
     );
   });
@@ -1038,8 +1047,7 @@ function signalsOf(res) {
     (a, b) => b[1] - a[1] || a[0].localeCompare(b[0]),
   );
   const frictionRepeat = frictionTopics.filter(([, n]) => n >= 2).length;
-  const frictionDetailsAll = detailAll;
-  const frictionDetails = frictionDetailsAll.slice(-5).map((d) => d.slice(0, 60));
+  const frictionDetails = detailAll.slice(-5);
 
   let open = 0;
   const latestRetro = retros.length ? retros[retros.length - 1] : null;
@@ -1102,7 +1110,7 @@ function signalsOf(res) {
   if (parked >= 3) reasons.push('park≥3');
   return {
     plans: plans.length, tiers, rounds, p1, p2, friction, waiver, checklist, skip,
-    open, runs, parked, decisions, hasFlow, lastRetroDate, frictionDetails, frictionDetailsAll,
+    open, runs, parked, decisions, hasFlow, lastRetroDate, frictionDetails, frictionDetailsAll: detailAll,
     frictionTopics, frictionRepeat,
     due: reasons.length > 0, reasons,
   };
@@ -1111,9 +1119,12 @@ function signalsOf(res) {
 function renderSignals(sig, opts = {}) {
   const source = sig.hasFlow ? `docs + .flow（${sig.runs} 个账本）` : 'docs（降级：无 .flow）';
   const details = opts.detail ? sig.frictionDetailsAll : sig.frictionDetails;
-  const detailLabel = opts.detail ? `摩擦明细（全部 ${details.length} 条）` : '摩擦明细（最近 5 条）';
+  const total = sig.frictionDetailsAll.length;
+  const detailLabel = opts.detail
+    ? `摩擦明细（全部 ${details.length} 条）`
+    : `摩擦明细（最近 ${Math.min(5, total)} 条）`;
   return [
-    '## 信号摘要（--signals）',
+    `## 信号摘要（${opts.detail ? '--signals --detail' : '--signals'}）`,
     `- 数据源：${source}`,
     `- 轮次：共 ${sig.plans} 个 Plan（standard ${sig.tiers.standard} / quick ${sig.tiers.quick}），自上次 retro ${sig.rounds}${sig.lastRetroDate ? `（上次 ${sig.lastRetroDate}）` : ''}`,
     `- Review（窗口内）：checklist ${sig.checklist} / skip ${sig.skip}；P1 ${sig.p1} / P2 ${sig.p2}`,
@@ -1227,7 +1238,11 @@ function runFixtures() {
     if (sig && flags.has('brief')) text += '\n' + renderBrief(sig);
     const code = res.errors.length ? 1 : 0;
     const docsShown = toPosix(res.docsDir);
-    const missing = wanted.filter((w) => !text.includes(w.replace(/\{docsDir\}/g, docsShown)));
+    const missing = wanted.filter((w) => {
+      const neg = w.startsWith('!');
+      const frag = (neg ? w.slice(1) : w).replace(/\{docsDir\}/g, docsShown);
+      return neg ? text.includes(frag) : !text.includes(frag);
+    });
     const ok = code === wantExit && missing.length === 0;
     console.log(`${ok ? 'ok  ' : 'FAIL'} fixture ${name} — exit ${code}${missing.length ? `，缺少：${missing.join(' / ')}` : ''}`);
     if (ok) pass++;

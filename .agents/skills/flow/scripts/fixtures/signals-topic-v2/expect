@@ -1,4 +1,4 @@
 exit: 0
 flags: signals
-工程摩擦（窗口内）：2 个 Plan 有记账
-摩擦主题：env 2 / db 1 / gate 1 / other 1 / ui 1（friction_repeat=1）
+工程摩擦（窗口内）：5 个 Plan 有记账
+摩擦主题：env 4 / ui 2 / db 1 / gate 1 / other 1（friction_repeat=2）

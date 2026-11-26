@@ -1,0 +1,5 @@
+exit: 0
+flags: signals
+摩擦明细（最近 5 条）
+PLAN-20260101-a: 1. docs/ A1 索引缺失
+!PLAN-20260102-b: 1. B1 文档缺失

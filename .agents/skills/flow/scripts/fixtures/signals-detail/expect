@@ -1,7 +1,10 @@
 exit: 0
-flags: signals, detail
+flags: detail
 工程摩擦（窗口内）：2 个 Plan 有记账
-摩擦明细（全部 3 条）
+摩擦明细（全部 4 条）
 PLAN-20260101-a: 1. docs/ 索引遗漏
 PLAN-20260101-a: 2. fixtures 路径断言失败
 PLAN-20260102-b: 1. tests 太慢
+PLAN-20260102-b: 2. 长摩擦条目ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyzENDING-SHO
+!ULD-NOT-APPEAR
+!摩擦明细（最近

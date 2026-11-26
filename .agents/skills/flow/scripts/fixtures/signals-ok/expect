@@ -2,7 +2,7 @@ exit: 0
 flags: signals
 P1 1
 工程摩擦（窗口内）：1
-摩擦明细
+摩擦明细（最近 2 条）
 PLAN-20260101-demo: 1. 单文件测试触发全仓覆盖率
 摩擦主题：other 1 / test 1（friction_repeat=0）
 due: no
