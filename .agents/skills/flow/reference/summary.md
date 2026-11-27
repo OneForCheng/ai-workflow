@@ -4,6 +4,19 @@
 
 目标：把本轮**实际改动**压缩成一句英文 commit 候选，并在用户确认后按 `flow-commit.mjs` 的 `[用户名] #卡号 type: 摘要` 格式提交。
 
+## 0. G2 前校验（必跑）
+
+G2 各段输出后、生成变更总结前运行：
+
+```bash
+node .agents/skills/flow/scripts/flow-check.mjs docs --strict
+```
+
+- exit 0 → 继续；非 0 → **G2 未通过**。
+- 按 ERROR 修复（Plan §8/status、Feature AC/status/frozen 漂移等）。
+- 历史遗留且不在本轮范围：经用户确认后写入 Plan §8 `waiver`（`flow-check --strict | 原因=历史遗留 | 复检时点=…`），否则不得继续。
+- 脚本不可用（目标项目未安装该脚本）：跳过并说明，不阻塞收尾。
+
 ## 1. 适用范围
 
 | 模式 | 时机 | 是否询问提交 | 是否执行非 dry-run 脚本 |

@@ -13,3 +13,4 @@
 | PLAN-20261119-flow-commit-hardening | flow-commit 多仓支持与署名校验实现方案 | FEAT-006 | workflow, commit, workspace, validation | done | 2026-11-19 | [plans/PLAN-20261119-flow-commit-hardening.md](PLAN-20261119-flow-commit-hardening.md) |
 | PLAN-20261119-plan-status-check | Plan §8/status 漂移校验与 Go 收尾清单补强 | FEAT-002 | workflow, docs, quality-gates | done | 2026-11-19 | [plans/PLAN-20261119-plan-status-check.md](PLAN-20261119-plan-status-check.md) |
 | PLAN-20261120-feature-status-check | Feature 状态漂移校验与存量收尾 | FEAT-002 | workflow, docs, quality-gates | done | 2026-11-20 | [plans/PLAN-20261120-feature-status-check.md](PLAN-20261120-feature-status-check.md) |
+| PLAN-20261127-flow-output-gate | retro 输出完整性与 G2 门禁增强实现方案 | FEAT-007 | workflow, retro, signals, quality-gates | done | 2026-11-27 | [plans/PLAN-20261127-flow-output-gate.md](PLAN-20261127-flow-output-gate.md) |

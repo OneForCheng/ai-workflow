@@ -99,14 +99,15 @@ updated: 2026-11-20
 | `--trace` | Plan 覆盖矩阵校验 + 手填用户名 WARN | 是 |
 | `--gates` | 质量门契约结构校验 | 是 |
 | `--state` | `.flow/` 状态、账本、成员仓清单校验 | 是 |
-| `--signals` | 跨轮信号摘要（轮次 / tier / Review / 摩擦明细 + 摩擦主题与 `friction_repeat`；`--detail` 时输出全部摩擦明细） | 否（仅展示） |
-| `--detail` | 配合 `--signals` 输出全部摩擦明细（隐含 `--signals`；每条 80 字） | 否（仅展示） |
+| `--signals` | 跨轮信号摘要（轮次 / tier / Review / 摩擦明细 + 摩擦主题与 `friction_repeat` + 窗口内无落点条数；`--detail` 时输出全部摩擦明细） | 否（仅展示） |
+| `--detail` | 配合 `--signals` 输出全部摩擦明细（隐含 `--signals`；**不截断**） | 否（仅展示） |
 | `--brief` | 一行 due 判定（含 `friction_repeat`） | 否（仅展示） |
 | `--freeze <ID>` | 打印 Feature 需求块哈希（只读） | 否 |
 | `--fixtures` | 运行全部自测样本（`expect` 可声明 `flags: trace/gates/map/state/signals/detail/brief/strict`；消息片段支持 `{docsDir}` 占位） | 是（全过才 0） |
 
-- **组合输出**：`--signals --brief` 同时输出信号摘要与 brief 行（顺序 signals → brief）；`--signals --detail` 输出全部摩擦明细（每条 80 字），默认最多 5 条（实际条数见标题；每条 80 字）；`--detail` 隐含 `--signals`；单用 `--brief` 仅一行
+- **组合输出**：`--signals --brief` 同时输出信号摘要与 brief 行（顺序 signals → brief）；`--signals --detail` 输出全部摩擦明细（**不截断**），默认最多 5 条（实际条数见标题；每条 80 字）；`--detail` 隐含 `--signals`；单用 `--brief` 仅一行
 - **Plan 漂移**：Plan 的 `## 8. 执行结果与偏差`（兼容无编号写法）去 HTML 注释、标题与表格分隔行后仍有正文，而 `status` 仍为 `draft`/`active` → WARN；`--strict` 升级为 error。确需保持 `active`（未完成 / 多轮）时应在 §8 注明遗留
 - **Feature 漂移**：全部 AC 已勾但 `status` 仍为 `draft`/`active`、`status=done` 但有未勾 AC、或 `status=done` 缺 `frozen` → WARN；`--strict` 升级为 error
+- **落点**：摩擦条目必填 `落点`（`<文件 / 脚本>` 或 `流程改进`）；`--signals` 输出窗口内无落点条数，不阻断 G2
 - **摩擦主题**：先剥离反引号代码段，再按固定词表（`env` / `ui` / `gate` / `build` / `test` / `lint` / `db` / `ci` / `tooling` / `docs`，`other` 兜底）归类「现象」部分（首个 `｜`/`|` 之前）；`flyway` 归 `db`、`nvm` 与权限类（含 CI 权限）归 `env`；`friction_repeat` = 窗口内出现在 ≥2 个 Plan 的 topic 数（同 Plan 去重）。`friction` 总数仍按字段值是否非「无」判定（与既有口径一致；字段值为「无」时忽略其下列表项），waiver 与 Review 判定不变
 - 所有子命令只读，不修改文件。

@@ -1006,6 +1006,7 @@ function signalsOf(res) {
   let skip = 0;
   const detailAll = [];
   const topicCounts = new Map();
+  let noLanding = 0;
   const planKey = (p) => {
     const created = String(p.data.created || '').replace(/-/g, '');
     return created || String(p.data.id || p.base);
@@ -1036,7 +1037,10 @@ function signalsOf(res) {
             .some((s) => !isNoneValue(stripListMarker(s))));
     if (hasFriction) friction++;
     const entryTexts = hasFriction ? (entries.length ? entries : [fr]) : [];
-    for (const entry of entryTexts) detailAll.push(`${p.data.id || p.base}: ${entry.slice(0, 80)}`);
+    for (const entry of entryTexts) {
+      detailAll.push({ id: p.data.id || p.base, entry });
+      if (!/落点[：:]/.test(entry)) noLanding++;
+    }
     for (const topic of new Set(entryTexts.map(topicOfFriction))) {
       topicCounts.set(topic, (topicCounts.get(topic) || 0) + 1);
     }
@@ -1111,7 +1115,7 @@ function signalsOf(res) {
   return {
     plans: plans.length, tiers, rounds, p1, p2, friction, waiver, checklist, skip,
     open, runs, parked, decisions, hasFlow, lastRetroDate, frictionDetails, frictionDetailsAll: detailAll,
-    frictionTopics, frictionRepeat,
+    frictionTopics, frictionRepeat, noLanding,
     due: reasons.length > 0, reasons,
   };
 }
@@ -1129,8 +1133,14 @@ function renderSignals(sig, opts = {}) {
     `- 轮次：共 ${sig.plans} 个 Plan（standard ${sig.tiers.standard} / quick ${sig.tiers.quick}），自上次 retro ${sig.rounds}${sig.lastRetroDate ? `（上次 ${sig.lastRetroDate}）` : ''}`,
     `- Review（窗口内）：checklist ${sig.checklist} / skip ${sig.skip}；P1 ${sig.p1} / P2 ${sig.p2}`,
     `- 工程摩擦（窗口内）：${sig.friction} 个 Plan 有记账；waiver：${sig.waiver}`,
-    ...(details.length ? [`- ${detailLabel}：`, ...details.map((d) => `  - ${d}`)] : []),
+    ...(details.length
+      ? [
+          `- ${detailLabel}：`,
+          ...details.map((d) => `  - ${d.id}: ${opts.detail ? d.entry : d.entry.slice(0, 80)}`),
+        ]
+      : []),
     `- 摩擦主题：${sig.frictionTopics.length ? sig.frictionTopics.map(([t, n]) => `${t} ${n}`).join(' / ') : '无'}（friction_repeat=${sig.frictionRepeat}）`,
+    `- 无落点摩擦：${sig.noLanding} 条`,
     `- 运行：parked ${sig.parked} / decision_auto ${sig.decisions}`,
     `- 未结实验：${sig.open}`,
     `- 触发：due: ${sig.due ? 'yes' : 'no'}${sig.due ? `（${sig.reasons.join('、')}）` : ''}`,

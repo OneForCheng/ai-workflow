@@ -10,3 +10,4 @@
 | FEAT-004 | 跨轮 retro 与信号闭环（含 dry-run 状态修正） | workflow, retro, signals, state | done | BA | 2026-11-20 | [features/FEAT-004-retro-signals.md](FEAT-004-retro-signals.md) |
 | FEAT-005 | /flow 收尾变更总结与提交助手 | workflow, skills, commit, scripts | done | BA | 2026-11-19 | [features/FEAT-005-flow-change-summary.md](FEAT-005-flow-change-summary.md) |
 | FEAT-006 | flow-commit 多仓支持与署名校验 | workflow, commit, workspace, validation | done | BA | 2026-11-19 | [features/FEAT-006-flow-commit-hardening.md](FEAT-006-flow-commit-hardening.md) |
+| FEAT-007 | retro 输出完整性与 G2 门禁增强 | workflow, retro, signals, quality-gates | done | BA | 2026-11-27 | [features/FEAT-007-flow-output-gate.md](FEAT-007-flow-output-gate.md) |
